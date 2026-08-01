@@ -1,7 +1,7 @@
 // Dockpoly UI Engine Script - Comprehensive Container, Image, Network & Volume Dashboard
 
 document.addEventListener('DOMContentLoaded', () => {
-    // Navigation Tabs
+    // Navigation Tabs & Views
     const navTabs = document.querySelectorAll('.nav-tab');
     const viewPanels = document.querySelectorAll('.view-panel');
 
@@ -20,6 +20,13 @@ document.addEventListener('DOMContentLoaded', () => {
     const openDeployModalBtn = document.getElementById('openDeployModalBtn');
     const closeModalBtn = document.getElementById('closeModalBtn');
     const cancelModalBtn = document.getElementById('cancelModalBtn');
+
+    // Mobile Sidebar Drawer Elements
+    const toggleMobileSidebarBtn = document.getElementById('toggleMobileSidebarBtn');
+    const closeMobileSidebarBtn = document.getElementById('closeMobileSidebarBtn');
+    const mobileSidebarBackdrop = document.getElementById('mobileSidebarBackdrop');
+    const mobileHeaderDeployBtn = document.getElementById('mobileHeaderDeployBtn');
+    const sidebarDeployBtn = document.getElementById('sidebarDeployBtn');
 
     // Delete Container Modal
     const deleteConfirmModal = document.getElementById('deleteConfirmModal');
@@ -151,20 +158,61 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // 1. Tab Switcher
+    // Mobile Sidebar Drawer Controls
+    if (toggleMobileSidebarBtn) {
+        toggleMobileSidebarBtn.addEventListener('click', () => {
+            mobileSidebarBackdrop.classList.add('active');
+        });
+    }
+
+    if (closeMobileSidebarBtn) {
+        closeMobileSidebarBtn.addEventListener('click', () => {
+            mobileSidebarBackdrop.classList.remove('active');
+        });
+    }
+
+    if (mobileSidebarBackdrop) {
+        mobileSidebarBackdrop.addEventListener('click', (e) => {
+            if (e.target === mobileSidebarBackdrop) {
+                mobileSidebarBackdrop.classList.remove('active');
+            }
+        });
+    }
+
+    [openDeployModalBtn, mobileHeaderDeployBtn, sidebarDeployBtn].forEach(btn => {
+        if (btn) {
+            btn.addEventListener('click', () => {
+                if (mobileSidebarBackdrop) mobileSidebarBackdrop.classList.remove('active');
+                deployModal.classList.add('active');
+            });
+        }
+    });
+
+    // Unified Navigation Tab Switcher (Desktop & Mobile Drawer)
     navTabs.forEach(tab => {
         tab.addEventListener('click', () => {
-            navTabs.forEach(t => t.classList.remove('active'));
+            const targetViewId = tab.dataset.view;
+
+            // Synchronize active state across both desktop tabs and mobile sidebar tabs
+            navTabs.forEach(t => {
+                if (t.dataset.view === targetViewId) {
+                    t.classList.add('active');
+                } else {
+                    t.classList.remove('active');
+                }
+            });
+
             viewPanels.forEach(p => p.classList.add('hidden'));
             viewPanels.forEach(p => p.classList.remove('active'));
 
-            tab.classList.add('active');
-            const targetViewId = tab.dataset.view;
             const targetView = document.getElementById(targetViewId);
             if (targetView) {
                 targetView.classList.remove('hidden');
                 targetView.classList.add('active');
             }
+
+            // Close mobile sidebar on tab selection
+            if (mobileSidebarBackdrop) mobileSidebarBackdrop.classList.remove('active');
 
             if (targetViewId === 'viewContainers') fetchContainers();
             if (targetViewId === 'viewImages') fetchImages();
@@ -183,7 +231,6 @@ document.addEventListener('DOMContentLoaded', () => {
     if (refreshVolumesBtn) refreshVolumesBtn.addEventListener('click', fetchVolumes);
 
     // Modal Control Handlers
-    openDeployModalBtn.addEventListener('click', () => deployModal.classList.add('active'));
     [closeModalBtn, cancelModalBtn].forEach(b => b.addEventListener('click', () => deployModal.classList.remove('active')));
     closeInspectBtn.addEventListener('click', () => inspectModal.classList.remove('active'));
     closeInspectImageBtn.addEventListener('click', () => inspectImageModal.classList.remove('active'));
@@ -728,7 +775,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // Fetch Volumes & Render Table with Compact Truncated Badges
+    // Fetch Volumes & Render Table
     async function fetchVolumes() {
         volumesTableBody.innerHTML = `<tr><td colspan="5" style="text-align:center;">Loading Docker volumes...</td></tr>`;
         try {
