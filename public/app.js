@@ -1,23 +1,27 @@
-// Dockpoly UI Script - Full Container & Image Management
+// Dockpoly UI Engine Script - Comprehensive Container, Image, Network & Volume Dashboard
 
 document.addEventListener('DOMContentLoaded', () => {
     // Navigation Tabs
     const navTabs = document.querySelectorAll('.nav-tab');
     const viewPanels = document.querySelectorAll('.view-panel');
+
+    // View Tables & Grids
     const containerGrid = document.getElementById('containerGrid');
     const imagesTableBody = document.getElementById('imagesTableBody');
+    const networksTableBody = document.getElementById('networksTableBody');
+    const volumesTableBody = document.getElementById('volumesTableBody');
     const metricsTableBody = document.getElementById('metricsTableBody');
 
     // Stats
     const statRunningCount = document.getElementById('statRunningCount');
 
-    // Modals
+    // Deploy Modal
     const deployModal = document.getElementById('deployModal');
     const openDeployModalBtn = document.getElementById('openDeployModalBtn');
     const closeModalBtn = document.getElementById('closeModalBtn');
     const cancelModalBtn = document.getElementById('cancelModalBtn');
 
-    // Container Delete Modal
+    // Delete Container Modal
     const deleteConfirmModal = document.getElementById('deleteConfirmModal');
     const closeDeleteModalBtn = document.getElementById('closeDeleteModalBtn');
     const cancelDeleteBtn = document.getElementById('cancelDeleteBtn');
@@ -25,7 +29,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const deleteTargetName = document.getElementById('deleteTargetName');
     const inputForceDelete = document.getElementById('inputForceDelete');
 
-    // Image Delete Modal
+    // Delete Image Modal
     const deleteImageModal = document.getElementById('deleteImageModal');
     const closeDeleteImageModalBtn = document.getElementById('closeDeleteImageModalBtn');
     const cancelDeleteImageBtn = document.getElementById('cancelDeleteImageBtn');
@@ -33,7 +37,22 @@ document.addEventListener('DOMContentLoaded', () => {
     const deleteImageTargetTag = document.getElementById('deleteImageTargetTag');
     const inputForceDeleteImage = document.getElementById('inputForceDeleteImage');
 
-    // Inspect Modal
+    // Delete Network Modal
+    const deleteNetworkModal = document.getElementById('deleteNetworkModal');
+    const closeDeleteNetworkModalBtn = document.getElementById('closeDeleteNetworkModalBtn');
+    const cancelDeleteNetworkBtn = document.getElementById('cancelDeleteNetworkBtn');
+    const confirmDeleteNetworkBtn = document.getElementById('confirmDeleteNetworkBtn');
+    const deleteNetworkTargetName = document.getElementById('deleteNetworkTargetName');
+
+    // Delete Volume Modal
+    const deleteVolumeModal = document.getElementById('deleteVolumeModal');
+    const closeDeleteVolumeModalBtn = document.getElementById('closeDeleteVolumeModalBtn');
+    const cancelDeleteVolumeBtn = document.getElementById('cancelDeleteVolumeBtn');
+    const confirmDeleteVolumeBtn = document.getElementById('confirmDeleteVolumeBtn');
+    const deleteVolumeTargetName = document.getElementById('deleteVolumeTargetName');
+    const inputForceDeleteVolume = document.getElementById('inputForceDeleteVolume');
+
+    // Container Inspect Modal
     const inspectModal = document.getElementById('inspectModal');
     const closeInspectBtn = document.getElementById('closeInspectBtn');
     const inspectTitle = document.getElementById('inspectTitle');
@@ -41,9 +60,23 @@ document.addEventListener('DOMContentLoaded', () => {
     const inspectEnvBlock = document.getElementById('inspectEnvBlock');
     const inspectJsonBlock = document.getElementById('inspectJsonBlock');
 
-    // Buttons & Form
+    // Image Detailed Inspect Modal (A-Z)
+    const inspectImageModal = document.getElementById('inspectImageModal');
+    const closeInspectImageBtn = document.getElementById('closeInspectImageBtn');
+    const inspectImageTitle = document.getElementById('inspectImageTitle');
+    const inspectImageSummaryGrid = document.getElementById('inspectImageSummaryGrid');
+    const inspectImageEnvBlock = document.getElementById('inspectImageEnvBlock');
+    const inspectImageJsonBlock = document.getElementById('inspectImageJsonBlock');
+
+    // Docker Hub Auto-Complete
+    const inputImage = document.getElementById('inputImage');
+    const hubSearchDropdown = document.getElementById('hubSearchDropdown');
+
+    // Buttons
     const refreshContainersBtn = document.getElementById('refreshContainersBtn');
     const refreshImagesBtn = document.getElementById('refreshImagesBtn');
+    const refreshNetworksBtn = document.getElementById('refreshNetworksBtn');
+    const refreshVolumesBtn = document.getElementById('refreshVolumesBtn');
     const deployForm = document.getElementById('deployForm');
     const addEnvBtn = document.getElementById('addEnvBtn');
     const envList = document.getElementById('envList');
@@ -51,8 +84,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
     let pendingDeleteIdentifier = null;
     let pendingDeleteImageTarget = null;
+    let pendingDeleteNetworkTarget = null;
+    let pendingDeleteVolumeTarget = null;
+    let hubSearchDebounceTimer = null;
 
-    // Presets Data
+    // Presets Configuration
     const PRESETS = {
         nginx: { image: 'nginx', tag: 'alpine', name: 'web-demo', port: '80', env: [] },
         postgres: {
@@ -71,10 +107,17 @@ document.addEventListener('DOMContentLoaded', () => {
             ]
         },
         redis: { image: 'redis', tag: 'alpine', name: 'my-cache', port: '6379', env: [] },
-        node: { image: 'node', tag: 'alpine', name: 'node-app', port: '3000', env: [{ key: 'NODE_ENV', value: 'production' }] }
+        node: { image: 'node', tag: 'alpine', name: 'node-app', port: '3000', env: [{ key: 'NODE_ENV', value: 'production' }] },
+        mongo: {
+            image: 'mongo', tag: 'latest', name: 'my-mongo', port: '27017',
+            env: [
+                { key: 'MONGO_INITDB_ROOT_USERNAME', value: 'mongouser' },
+                { key: 'MONGO_INITDB_ROOT_PASSWORD', value: 'mongopass' }
+            ]
+        }
     };
 
-    // 1. Tab Switching Handler
+    // 1. Tab Switcher
     navTabs.forEach(tab => {
         tab.addEventListener('click', () => {
             navTabs.forEach(t => t.classList.remove('active'));
@@ -91,22 +134,27 @@ document.addEventListener('DOMContentLoaded', () => {
 
             if (targetViewId === 'viewContainers') fetchContainers();
             if (targetViewId === 'viewImages') fetchImages();
+            if (targetViewId === 'viewNetworks') fetchNetworks();
+            if (targetViewId === 'viewVolumes') fetchVolumes();
             if (targetViewId === 'viewMetrics') fetchMetrics();
         });
     });
 
-    // 2. Initial Fetch
+    // 2. Initial Data Fetch
     fetchContainers();
 
     if (refreshContainersBtn) refreshContainersBtn.addEventListener('click', fetchContainers);
     if (refreshImagesBtn) refreshImagesBtn.addEventListener('click', fetchImages);
+    if (refreshNetworksBtn) refreshNetworksBtn.addEventListener('click', fetchNetworks);
+    if (refreshVolumesBtn) refreshVolumesBtn.addEventListener('click', fetchVolumes);
 
-    // Modal Handlers
+    // Modal Control Handlers
     openDeployModalBtn.addEventListener('click', () => deployModal.classList.add('active'));
     [closeModalBtn, cancelModalBtn].forEach(b => b.addEventListener('click', () => deployModal.classList.remove('active')));
     closeInspectBtn.addEventListener('click', () => inspectModal.classList.remove('active'));
+    closeInspectImageBtn.addEventListener('click', () => inspectImageModal.classList.remove('active'));
 
-    // Container Delete Modal Handlers
+    // Container Delete Modal
     [closeDeleteModalBtn, cancelDeleteBtn].forEach(b => b.addEventListener('click', () => {
         deleteConfirmModal.classList.remove('active');
         pendingDeleteIdentifier = null;
@@ -115,12 +163,18 @@ document.addEventListener('DOMContentLoaded', () => {
     confirmDeleteBtn.addEventListener('click', async () => {
         if (!pendingDeleteIdentifier) return;
         const force = inputForceDelete.checked;
+        confirmDeleteBtn.disabled = true;
+        confirmDeleteBtn.innerHTML = `<span class="spinner-sm"></span> 🗑️ Removing Container...`;
+        
         await executeDeleteContainer(pendingDeleteIdentifier, force);
+        
+        confirmDeleteBtn.disabled = false;
+        confirmDeleteBtn.innerHTML = `Delete Container`;
         deleteConfirmModal.classList.remove('active');
         pendingDeleteIdentifier = null;
     });
 
-    // Image Delete Modal Handlers
+    // Image Delete Modal
     [closeDeleteImageModalBtn, cancelDeleteImageBtn].forEach(b => b.addEventListener('click', () => {
         deleteImageModal.classList.remove('active');
         pendingDeleteImageTarget = null;
@@ -129,10 +183,144 @@ document.addEventListener('DOMContentLoaded', () => {
     confirmDeleteImageBtn.addEventListener('click', async () => {
         if (!pendingDeleteImageTarget) return;
         const force = inputForceDeleteImage.checked;
+        confirmDeleteImageBtn.disabled = true;
+        confirmDeleteImageBtn.innerHTML = `<span class="spinner-sm"></span> 🗑️ Purging Image...`;
+
         await executeDeleteImage(pendingDeleteImageTarget, force);
+
+        confirmDeleteImageBtn.disabled = false;
+        confirmDeleteImageBtn.innerHTML = `Delete Image`;
         deleteImageModal.classList.remove('active');
         pendingDeleteImageTarget = null;
     });
+
+    // Network Delete Modal
+    [closeDeleteNetworkModalBtn, cancelDeleteNetworkBtn].forEach(b => b.addEventListener('click', () => {
+        deleteNetworkModal.classList.remove('active');
+        pendingDeleteNetworkTarget = null;
+    }));
+
+    confirmDeleteNetworkBtn.addEventListener('click', async () => {
+        if (!pendingDeleteNetworkTarget) return;
+        confirmDeleteNetworkBtn.disabled = true;
+        confirmDeleteNetworkBtn.innerHTML = `<span class="spinner-sm"></span> 🌐 Pruning Network...`;
+
+        await executeDeleteNetwork(pendingDeleteNetworkTarget);
+
+        confirmDeleteNetworkBtn.disabled = false;
+        confirmDeleteNetworkBtn.innerHTML = `Delete Network`;
+        deleteNetworkModal.classList.remove('active');
+        pendingDeleteNetworkTarget = null;
+    });
+
+    // Volume Delete Modal
+    [closeDeleteVolumeModalBtn, cancelDeleteVolumeBtn].forEach(b => b.addEventListener('click', () => {
+        deleteVolumeModal.classList.remove('active');
+        pendingDeleteVolumeTarget = null;
+    }));
+
+    confirmDeleteVolumeBtn.addEventListener('click', async () => {
+        if (!pendingDeleteVolumeTarget) return;
+        const force = inputForceDeleteVolume.checked;
+        confirmDeleteVolumeBtn.disabled = true;
+        confirmDeleteVolumeBtn.innerHTML = `<span class="spinner-sm"></span> 💾 Purging Volume...`;
+
+        await executeDeleteVolume(pendingDeleteVolumeTarget, force);
+
+        confirmDeleteVolumeBtn.disabled = false;
+        confirmDeleteVolumeBtn.innerHTML = `Delete Volume`;
+        deleteVolumeModal.classList.remove('active');
+        pendingDeleteVolumeTarget = null;
+    });
+
+    // 3. Interactive Quick Presets Handler
+    document.querySelectorAll('.preset-card').forEach(card => {
+        card.addEventListener('click', (e) => {
+            e.preventDefault();
+            const key = card.dataset.preset;
+            const p = PRESETS[key];
+
+            if (p) {
+                // Active Card Highlight
+                document.querySelectorAll('.preset-card').forEach(c => c.classList.remove('active'));
+                card.classList.add('active');
+
+                // Populate Fields
+                document.getElementById('inputImage').value = p.image;
+                document.getElementById('inputTag').value = p.tag;
+                document.getElementById('inputName').value = p.name;
+                document.getElementById('inputPort').value = p.port;
+
+                // Hide hub search dropdown
+                if (hubSearchDropdown) hubSearchDropdown.classList.add('hidden');
+
+                // Populate Env Vars
+                envList.innerHTML = '';
+                p.env.forEach(pair => addEnvRow(pair.key, pair.value));
+
+                showToast(`Applied ${p.name || key} preset (Port ${p.port})`, 'info');
+            }
+        });
+    });
+
+    // 4. Docker Hub Auto-Complete Real-Time Search
+    if (inputImage) {
+        inputImage.addEventListener('input', (e) => {
+            const query = e.target.value.trim();
+            clearTimeout(hubSearchDebounceTimer);
+
+            if (query.length < 2) {
+                hubSearchDropdown.classList.add('hidden');
+                hubSearchDropdown.innerHTML = '';
+                return;
+            }
+
+            hubSearchDebounceTimer = setTimeout(async () => {
+                try {
+                    const res = await fetch(`/image/search?q=${encodeURIComponent(query)}`);
+                    const data = await res.json();
+                    const results = data.data || [];
+
+                    if (results.length === 0) {
+                        hubSearchDropdown.classList.add('hidden');
+                        return;
+                    }
+
+                    hubSearchDropdown.innerHTML = results.map(r => `
+                        <div class="autocomplete-item" data-name="${r.name}">
+                            <div>
+                                <div style="display:flex; align-items:center; gap:6px;">
+                                    <span class="autocomplete-item-name">${r.name}</span>
+                                    ${r.isOfficial ? `<span class="badge-official">OFFICIAL</span>` : ''}
+                                </div>
+                                <div class="autocomplete-item-desc">${r.description || 'Docker container image'}</div>
+                            </div>
+                            <div class="autocomplete-meta">
+                                <span>⭐ ${r.stars}</span>
+                            </div>
+                        </div>
+                    `).join('');
+
+                    hubSearchDropdown.classList.remove('hidden');
+
+                    document.querySelectorAll('.autocomplete-item').forEach(item => {
+                        item.addEventListener('click', () => {
+                            inputImage.value = item.dataset.name;
+                            hubSearchDropdown.classList.add('hidden');
+                        });
+                    });
+                } catch (err) {
+                    console.error("Docker Hub search error:", err);
+                }
+            }, 300);
+        });
+
+        document.addEventListener('click', (e) => {
+            if (!inputImage.contains(e.target) && !hubSearchDropdown.contains(e.target)) {
+                hubSearchDropdown.classList.add('hidden');
+            }
+        });
+    }
 
     // Add Environment Variable Row
     addEnvBtn.addEventListener('click', () => addEnvRow());
@@ -149,24 +337,7 @@ document.addEventListener('DOMContentLoaded', () => {
         envList.appendChild(row);
     }
 
-    // Presets Handler
-    document.querySelectorAll('.preset-chip').forEach(chip => {
-        chip.addEventListener('click', (e) => {
-            e.preventDefault();
-            const p = PRESETS[chip.dataset.preset];
-            if (p) {
-                document.getElementById('inputImage').value = p.image;
-                document.getElementById('inputTag').value = p.tag;
-                document.getElementById('inputName').value = p.name;
-                document.getElementById('inputPort').value = p.port;
-                envList.innerHTML = '';
-                p.env.forEach(pair => addEnvRow(pair.key, pair.value));
-                showToast(`Applied preset: ${chip.dataset.preset}`, 'info');
-            }
-        });
-    });
-
-    // Deploy Form Submit
+    // Deploy Form Submit with Dynamic Loading Spinner & Disabling
     deployForm.addEventListener('submit', async (e) => {
         e.preventDefault();
 
@@ -186,9 +357,13 @@ document.addEventListener('DOMContentLoaded', () => {
         const ports = portVal ? [{ containerPort: portVal }] : undefined;
 
         const submitBtn = document.getElementById('submitDeployBtn');
+        const btnText = document.getElementById('deployBtnText');
         const spinner = document.getElementById('deploySpinner');
+        
         submitBtn.disabled = true;
-        spinner.classList.add('spinner');
+        btnText.textContent = "🚀 Deploying & Pulling...";
+        spinner.classList.remove('hidden');
+        spinner.classList.add('spinner-sm');
 
         try {
             const res = await fetch('/container', {
@@ -204,18 +379,24 @@ document.addEventListener('DOMContentLoaded', () => {
             deployModal.classList.remove('active');
             deployForm.reset();
             envList.innerHTML = '';
+            document.querySelectorAll('.preset-card').forEach(c => c.classList.remove('active'));
             fetchContainers();
         } catch (err) {
             showToast(err.message, 'error');
         } finally {
             submitBtn.disabled = false;
-            spinner.classList.remove('spinner');
+            btnText.textContent = "Launch Container";
+            spinner.classList.add('hidden');
+            spinner.classList.remove('spinner-sm');
         }
     });
 
-    // Fetch & Render Containers
+    // Fetch Containers with Skeleton Loading
     async function fetchContainers() {
-        containerGrid.innerHTML = `<div class="loading-state"><div class="spinner"></div><p>Fetching containers...</p></div>`;
+        containerGrid.innerHTML = `
+            <div class="skeleton-card"><div class="skeleton-box" style="height:24px;width:60%;"></div><div class="skeleton-box" style="height:14px;width:80%;"></div><div class="skeleton-box" style="height:36px;"></div></div>
+            <div class="skeleton-card"><div class="skeleton-box" style="height:24px;width:60%;"></div><div class="skeleton-box" style="height:14px;width:80%;"></div><div class="skeleton-box" style="height:36px;"></div></div>
+        `;
 
         try {
             const res = await fetch('/container');
@@ -292,9 +473,9 @@ document.addEventListener('DOMContentLoaded', () => {
             `;
         }).join('');
 
-        // Attach Event Listeners
+        // Attach Power Action Handlers with Dynamic Spinners & Button Disabling
         document.querySelectorAll('.power-btn').forEach(btn => {
-            btn.addEventListener('click', () => handlePowerAction(btn.dataset.id, btn.dataset.action));
+            btn.addEventListener('click', () => handlePowerAction(btn, btn.dataset.id, btn.dataset.action));
         });
 
         document.querySelectorAll('.inspect-btn').forEach(btn => {
@@ -310,17 +491,31 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // Power Action Handler
-    async function handlePowerAction(identifier, action) {
+    // Power Action Handler with Interactive Messages & Loading Spinner
+    async function handlePowerAction(btn, identifier, action) {
+        const originalContent = btn.innerHTML;
+        btn.disabled = true;
+
+        const actionTextMap = {
+            start: "▶️ Starting...",
+            stop: "⏹️ Stopping...",
+            pause: "⏸️ Pausing...",
+            unpause: "▶️ Resuming..."
+        };
+
+        btn.innerHTML = `<span class="spinner-sm"></span> ${actionTextMap[action] || action + 'ing...'}`;
+
         try {
             const res = await fetch(`/container/${identifier}/${action}`, { method: 'POST' });
             const data = await res.json();
             if (!res.ok) throw new Error(data.message || `Failed to ${action} container`);
 
             showToast(`Container '${identifier}' ${action}ed!`, 'success');
-            fetchContainers();
+            await fetchContainers();
         } catch (err) {
             showToast(err.message, 'error');
+            btn.disabled = false;
+            btn.innerHTML = originalContent;
         }
     }
 
@@ -366,21 +561,9 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // Inspect Tab Switcher
-    document.querySelectorAll('.inspect-tabs .tab-btn').forEach(btn => {
-        btn.addEventListener('click', () => {
-            document.querySelectorAll('.inspect-tabs .tab-btn').forEach(b => b.classList.remove('active'));
-            document.querySelectorAll('.inspect-body .tab-content').forEach(tc => tc.classList.add('hidden'));
-
-            btn.classList.add('active');
-            const target = document.getElementById(btn.dataset.tab);
-            if (target) target.classList.remove('hidden');
-        });
-    });
-
-    // Fetch Images
+    // Fetch Images & Render Table
     async function fetchImages() {
-        imagesTableBody.innerHTML = `<tr><td colspan="5" style="text-align:center;">Loading images...</td></tr>`;
+        imagesTableBody.innerHTML = `<tr><td colspan="5" style="text-align:center;">Loading local Docker images...</td></tr>`;
 
         try {
             const res = await fetch('/image');
@@ -393,6 +576,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 return;
             }
 
+            const SVG_INSPECT = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>`;
             const SVG_DELETE = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>`;
 
             imagesTableBody.innerHTML = images.map(img => {
@@ -403,16 +587,22 @@ document.addEventListener('DOMContentLoaded', () => {
                         <td><code>${img.id}</code></td>
                         <td>${img.sizeMb}</td>
                         <td>${new Date(img.created * 1000).toLocaleDateString()}</td>
-                        <td style="text-align: right;">
+                        <td style="text-align: right; display:flex; justify-content:flex-end; gap:6px;">
+                            <button class="btn btn-inspect btn-sm inspect-image-btn" data-target="${tag}">
+                                ${SVG_INSPECT} Inspect A-Z
+                            </button>
                             <button class="btn btn-danger btn-sm open-delete-image-btn" data-target="${tag}">
-                                ${SVG_DELETE} Delete Image
+                                ${SVG_DELETE} Delete
                             </button>
                         </td>
                     </tr>
                 `;
             }).join('');
 
-            // Delete Image Buttons Handler
+            document.querySelectorAll('.inspect-image-btn').forEach(btn => {
+                btn.addEventListener('click', () => inspectImageDetails(btn.dataset.target));
+            });
+
             document.querySelectorAll('.open-delete-image-btn').forEach(btn => {
                 btn.addEventListener('click', () => {
                     pendingDeleteImageTarget = btn.dataset.target;
@@ -422,6 +612,126 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         } catch (err) {
             imagesTableBody.innerHTML = `<tr><td colspan="5" style="color:var(--rose);text-align:center;">Error: ${err.message}</td></tr>`;
+        }
+    }
+
+    // A-Z Detailed Image Inspect
+    async function inspectImageDetails(identifier) {
+        try {
+            const res = await fetch(`/image/inspect/${encodeURIComponent(identifier)}`);
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.message);
+
+            const img = data.data;
+            inspectImageTitle.textContent = `Image Specification: ${img.repoTags[0] || img.id}`;
+
+            inspectImageSummaryGrid.innerHTML = `
+                <div class="detail-row"><span>Short ID:</span> <span>${img.id}</span></div>
+                <div class="detail-row"><span>Full SHA256:</span> <span style="font-family:monospace;font-size:11px;">${img.fullId}</span></div>
+                <div class="detail-row"><span>Repository Tags:</span> <span>${img.repoTags.join(', ') || 'None'}</span></div>
+                <div class="detail-row"><span>Virtual Size:</span> <span>${img.sizeMb}</span></div>
+                <div class="detail-row"><span>OS / Architecture:</span> <span>${img.os} / ${img.architecture}</span></div>
+                <div class="detail-row"><span>Created:</span> <span>${new Date(img.created).toLocaleString()}</span></div>
+                <div class="detail-row"><span>Layer Count:</span> <span>${img.layersCount} layers</span></div>
+                <div class="detail-row"><span>Author / Maintainer:</span> <span>${img.author || 'N/A'}</span></div>
+                <div class="detail-row"><span>Entrypoint / Cmd:</span> <span>${[...img.entrypoint, ...img.cmd].join(' ') || 'Default'}</span></div>
+            `;
+
+            inspectImageEnvBlock.textContent = `EXPOSED PORTS:\n${img.exposedPorts.join('\n') || 'None'}\n\nVOLUMES:\n${img.volumes.join('\n') || 'None'}\n\nENVIRONMENT:\n${img.env.join('\n') || 'None'}`;
+            inspectImageJsonBlock.textContent = JSON.stringify(img.raw, null, 2);
+
+            inspectImageModal.classList.add('active');
+        } catch (err) {
+            showToast(err.message, 'error');
+        }
+    }
+
+    // Fetch Networks & Render Table
+    async function fetchNetworks() {
+        networksTableBody.innerHTML = `<tr><td colspan="7" style="text-align:center;">Loading Docker networks...</td></tr>`;
+        try {
+            const res = await fetch('/network');
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.message);
+
+            const networks = data.data || [];
+            if (networks.length === 0) {
+                networksTableBody.innerHTML = `<tr><td colspan="7" style="text-align:center;">No networks found.</td></tr>`;
+                return;
+            }
+
+            const SVG_DELETE = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>`;
+
+            networksTableBody.innerHTML = networks.map(n => `
+                <tr>
+                    <td><strong>${n.name}</strong> ${n.name === 'deploy-engine' ? `<span class="badge running">ENGINE</span>` : ''}</td>
+                    <td><code>${n.id}</code></td>
+                    <td><span class="image-tag">${n.driver}</span></td>
+                    <td>${n.subnet} / ${n.gateway}</td>
+                    <td>${n.scope}</td>
+                    <td><strong>${n.containersCount} container(s)</strong></td>
+                    <td style="text-align: right;">
+                        ${['bridge', 'host', 'none', 'deploy-engine'].includes(n.name)
+                            ? `<span style="font-size:11px;color:var(--text-dim);">System Protected</span>`
+                            : `<button class="btn btn-danger btn-sm open-delete-network-btn" data-target="${n.id}" data-name="${n.name}">
+                                ${SVG_DELETE} Delete
+                               </button>`
+                        }
+                    </td>
+                </tr>
+            `).join('');
+
+            document.querySelectorAll('.open-delete-network-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    pendingDeleteNetworkTarget = btn.dataset.target;
+                    deleteNetworkTargetName.textContent = btn.dataset.name;
+                    deleteNetworkModal.classList.add('active');
+                });
+            });
+        } catch (err) {
+            networksTableBody.innerHTML = `<tr><td colspan="7" style="color:var(--rose);text-align:center;">Error: ${err.message}</td></tr>`;
+        }
+    }
+
+    // Fetch Volumes & Render Table
+    async function fetchVolumes() {
+        volumesTableBody.innerHTML = `<tr><td colspan="5" style="text-align:center;">Loading Docker volumes...</td></tr>`;
+        try {
+            const res = await fetch('/volume');
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.message);
+
+            const volumes = data.data || [];
+            if (volumes.length === 0) {
+                volumesTableBody.innerHTML = `<tr><td colspan="5" style="text-align:center;">No volumes found.</td></tr>`;
+                return;
+            }
+
+            const SVG_DELETE = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>`;
+
+            volumesTableBody.innerHTML = volumes.map(v => `
+                <tr>
+                    <td><strong>${v.name}</strong></td>
+                    <td><span class="image-tag">${v.driver}</span></td>
+                    <td><code style="font-size:11px;">${v.mountpoint}</code></td>
+                    <td>${v.scope}</td>
+                    <td style="text-align: right;">
+                        <button class="btn btn-danger btn-sm open-delete-volume-btn" data-target="${v.name}">
+                            ${SVG_DELETE} Delete
+                        </button>
+                    </td>
+                </tr>
+            `).join('');
+
+            document.querySelectorAll('.open-delete-volume-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    pendingDeleteVolumeTarget = btn.dataset.target;
+                    deleteVolumeTargetName.textContent = pendingDeleteVolumeTarget;
+                    deleteVolumeModal.classList.add('active');
+                });
+            });
+        } catch (err) {
+            volumesTableBody.innerHTML = `<tr><td colspan="5" style="color:var(--rose);text-align:center;">Error: ${err.message}</td></tr>`;
         }
     }
 
@@ -439,6 +749,34 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
+    // Delete Network Execution
+    async function executeDeleteNetwork(identifier) {
+        try {
+            const res = await fetch(`/network/${encodeURIComponent(identifier)}`, { method: 'DELETE' });
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.message || 'Network deletion failed');
+
+            showToast(`Pruned network '${identifier}'`, 'success');
+            fetchNetworks();
+        } catch (err) {
+            showToast(err.message, 'error');
+        }
+    }
+
+    // Delete Volume Execution
+    async function executeDeleteVolume(identifier, force = true) {
+        try {
+            const res = await fetch(`/volume/${encodeURIComponent(identifier)}?force=${force}`, { method: 'DELETE' });
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.message || 'Volume deletion failed');
+
+            showToast(`Deleted storage volume '${identifier}'`, 'success');
+            fetchVolumes();
+        } catch (err) {
+            showToast(err.message, 'error');
+        }
+    }
+
     // Render Metrics Table
     function renderMetricsTable(containers) {
         if (!metricsTableBody) return;
@@ -451,6 +789,19 @@ document.addEventListener('DOMContentLoaded', () => {
             </tr>
         `).join('');
     }
+
+    // Tab Switcher inside Inspect Modals
+    document.querySelectorAll('.inspect-tabs .tab-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const parent = btn.closest('.inspect-body');
+            parent.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            parent.querySelectorAll('.tab-content').forEach(tc => tc.classList.add('hidden'));
+
+            btn.classList.add('active');
+            const target = document.getElementById(btn.dataset.tab);
+            if (target) target.classList.remove('hidden');
+        });
+    });
 
     // Toast Notification Utility
     function showToast(msg, type = 'info') {

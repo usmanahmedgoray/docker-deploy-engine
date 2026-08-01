@@ -11,6 +11,12 @@ import {
     unpauseContainerService,
     listImages as listImagesService,
     deleteImageByIdOrTag as deleteImageByIdOrTagService,
+    inspectImageByIdOrTag as inspectImageByIdOrTagService,
+    searchDockerHubImages as searchDockerHubImagesService,
+    listNetworks as listNetworksService,
+    listVolumes as listVolumesService,
+    deleteNetworkByIdOrName as deleteNetworkByIdOrNameService,
+    deleteVolumeByName as deleteVolumeByNameService,
 } from "../services/managementApp.services";
 
 /**
@@ -231,4 +237,109 @@ const deleteImageByIdOrTag = async (req: Request, res: Response) => {
     }
 };
 
-export { createContainer, getContainerByIdOrName, deleteContainerByIdOrName, deleteContainersByImage, listContainers, containerPowerAction, listImages, deleteImageByIdOrTag };
+/**
+ * Controller to inspect Docker image
+ */
+const inspectImage = async (req: Request, res: Response) => {
+    try {
+        const identifier = Array.isArray(req.params.identifier) ? req.params.identifier[0] : req.params.identifier;
+        if (!identifier) {
+            res.status(400).json({ message: "Image identifier is required" });
+            return;
+        }
+        const data = await inspectImageByIdOrTagService(identifier);
+        res.status(200).json({ message: "Image details retrieved", data });
+    } catch (error: any) {
+        res.status(500).json({ message: "Failed to inspect image", error: error.message });
+    }
+};
+
+/**
+ * Controller to search Docker Hub
+ */
+const searchDockerHub = async (req: Request, res: Response) => {
+    try {
+        const q = (req.query.q as string) || "";
+        const data = await searchDockerHubImagesService(q);
+        res.status(200).json({ message: "Search completed", data });
+    } catch (error: any) {
+        res.status(500).json({ message: "Failed to search Docker Hub", error: error.message });
+    }
+};
+
+/**
+ * Controller to list networks
+ */
+const getNetworks = async (req: Request, res: Response) => {
+    try {
+        const data = await listNetworksService();
+        res.status(200).json({ message: "Networks retrieved", data });
+    } catch (error: any) {
+        res.status(500).json({ message: "Failed to list networks", error: error.message });
+    }
+};
+
+/**
+ * Controller to list volumes
+ */
+const getVolumes = async (req: Request, res: Response) => {
+    try {
+        const data = await listVolumesService();
+        res.status(200).json({ message: "Volumes retrieved", data });
+    } catch (error: any) {
+        res.status(500).json({ message: "Failed to list volumes", error: error.message });
+    }
+};
+
+/**
+ * Controller to delete network
+ */
+const deleteNetwork = async (req: Request, res: Response) => {
+    try {
+        const identifier = Array.isArray(req.params.identifier) ? req.params.identifier[0] : req.params.identifier;
+        if (!identifier) {
+            res.status(400).json({ message: "Network identifier is required" });
+            return;
+        }
+        const result = await deleteNetworkByIdOrNameService(identifier);
+        res.status(200).json({ message: `Network '${identifier}' deleted successfully`, data: result });
+    } catch (error: any) {
+        res.status(500).json({ message: "Failed to delete network", error: error.message });
+    }
+};
+
+/**
+ * Controller to delete volume
+ */
+const deleteVolume = async (req: Request, res: Response) => {
+    try {
+        const identifier = Array.isArray(req.params.identifier) ? req.params.identifier[0] : req.params.identifier;
+        const force = req.query.force === "true" || req.body?.force === true;
+
+        if (!identifier) {
+            res.status(400).json({ message: "Volume name is required" });
+            return;
+        }
+        const result = await deleteVolumeByNameService(identifier, force);
+        res.status(200).json({ message: `Volume '${identifier}' deleted successfully`, data: result });
+    } catch (error: any) {
+        res.status(500).json({ message: "Failed to delete volume", error: error.message });
+    }
+};
+
+export {
+    createContainer,
+    getContainerByIdOrName,
+    deleteContainerByIdOrName,
+    deleteContainersByImage,
+    listContainers,
+    containerPowerAction,
+    listImages,
+    deleteImageByIdOrTag,
+    inspectImage,
+    searchDockerHub,
+    getNetworks,
+    getVolumes,
+    deleteNetwork,
+    deleteVolume,
+};

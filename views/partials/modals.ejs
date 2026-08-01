@@ -1,0 +1,295 @@
+    <!-- Deploy Container Modal with Docker Hub Auto-Complete & Interactive Presets -->
+    <div class="modal-backdrop" id="deployModal">
+        <div class="modal-card">
+            <div class="modal-header">
+                <div>
+                    <h3>Deploy New Container</h3>
+                    <p class="modal-subtitle">Select a quick preset or search Docker Hub to configure your container</p>
+                </div>
+                <button class="close-btn" id="closeModalBtn" title="Close Modal">&times;</button>
+            </div>
+
+            <!-- Enhanced Quick Presets Grid -->
+            <div class="presets-section">
+                <span class="preset-label">Quick App Presets</span>
+                <div class="presets-grid" id="presetsGrid">
+                    <button type="button" class="preset-card" data-preset="nginx">
+                        <div class="preset-icon cyan">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="2" width="20" height="20" rx="4"/><path d="M7 17V7l10 10V7"/></svg>
+                        </div>
+                        <div class="preset-text">
+                            <strong>Nginx</strong>
+                            <span>Web :80</span>
+                        </div>
+                    </button>
+
+                    <button type="button" class="preset-card" data-preset="postgres">
+                        <div class="preset-icon purple">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg>
+                        </div>
+                        <div class="preset-text">
+                            <strong>PostgreSQL</strong>
+                            <span>DB :5432</span>
+                        </div>
+                    </button>
+
+                    <button type="button" class="preset-card" data-preset="pgadmin">
+                        <div class="preset-icon emerald">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                        </div>
+                        <div class="preset-text">
+                            <strong>pgAdmin</strong>
+                            <span>Portal :80</span>
+                        </div>
+                    </button>
+
+                    <button type="button" class="preset-card" data-preset="redis">
+                        <div class="preset-icon rose">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+                        </div>
+                        <div class="preset-text">
+                            <strong>Redis</strong>
+                            <span>Cache :6379</span>
+                        </div>
+                    </button>
+
+                    <button type="button" class="preset-card" data-preset="node">
+                        <div class="preset-icon amber">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/></svg>
+                        </div>
+                        <div class="preset-text">
+                            <strong>Node.js</strong>
+                            <span>Server :3000</span>
+                        </div>
+                    </button>
+
+                    <button type="button" class="preset-card" data-preset="mongo">
+                        <div class="preset-icon emerald">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20M7 8c0-3 5-6 5-6s5 3 5 6c0 5-5 10-5 10S7 13 7 8z"/></svg>
+                        </div>
+                        <div class="preset-text">
+                            <strong>MongoDB</strong>
+                            <span>NoSQL :27017</span>
+                        </div>
+                    </button>
+                </div>
+            </div>
+
+            <form id="deployForm" class="modal-body">
+                <div class="form-row">
+                    <div class="form-group search-container">
+                        <label for="inputImage">Image Name (Search Docker Hub) *</label>
+                        <input type="text" id="inputImage" placeholder="Type image e.g. nginx, mongo..." autocomplete="off" required>
+                        <!-- Docker Hub Auto-Complete Dropdown -->
+                        <div class="autocomplete-dropdown hidden" id="hubSearchDropdown"></div>
+                    </div>
+                    <div class="form-group">
+                        <label for="inputTag">Tag</label>
+                        <input type="text" id="inputTag" placeholder="latest, alpine, etc." value="latest">
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="inputName">Container Name</label>
+                        <input type="text" id="inputName" placeholder="e.g. web-app, my-postgres">
+                    </div>
+                    <div class="form-group">
+                        <label for="inputPort">Internal Container Port</label>
+                        <input type="text" id="inputPort" placeholder="e.g. 80, 5432, 3000">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <div class="env-header">
+                        <label>Environment Variables</label>
+                        <button type="button" class="btn-text" id="addEnvBtn">+ Add Variable</button>
+                    </div>
+                    <div class="env-list" id="envList"></div>
+                </div>
+
+                <div class="form-checkbox">
+                    <input type="checkbox" id="inputAutoRemove" checked>
+                    <label for="inputAutoRemove">Auto-remove container when stopped (`--rm` mode)</label>
+                </div>
+
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" id="cancelModalBtn">Cancel</button>
+                    <button type="submit" class="btn btn-primary" id="submitDeployBtn">
+                        <span class="btn-spinner hidden" id="deploySpinner"></span>
+                        <span id="deployBtnText">Launch Container</span>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Custom Delete Container Confirmation Modal -->
+    <div class="modal-backdrop" id="deleteConfirmModal">
+        <div class="modal-card small">
+            <div class="modal-header">
+                <div class="danger-header">
+                    <div class="alert-icon">
+                        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                    </div>
+                    <div>
+                        <h3>Delete Container</h3>
+                        <p class="modal-subtitle">Permanent container removal</p>
+                    </div>
+                </div>
+                <button class="close-btn" id="closeDeleteModalBtn">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p>Are you sure you want to remove container <strong id="deleteTargetName" style="color: var(--rose);"></strong>?</p>
+                <div class="form-checkbox" style="margin-top: 16px;">
+                    <input type="checkbox" id="inputForceDelete" checked>
+                    <label for="inputForceDelete">Force deletion if running (`--force` mode)</label>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" id="cancelDeleteBtn">Cancel</button>
+                <button type="button" class="btn btn-danger" id="confirmDeleteBtn">Delete Container</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Custom Delete Image Confirmation Modal -->
+    <div class="modal-backdrop" id="deleteImageModal">
+        <div class="modal-card small">
+            <div class="modal-header">
+                <div class="danger-header">
+                    <div class="alert-icon">
+                        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                    </div>
+                    <div>
+                        <h3>Delete Docker Image</h3>
+                        <p class="modal-subtitle">Remove cached image layer</p>
+                    </div>
+                </div>
+                <button class="close-btn" id="closeDeleteImageModalBtn">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p>Are you sure you want to delete image <strong id="deleteImageTargetTag" style="color: var(--rose);"></strong>?</p>
+                <div class="form-checkbox" style="margin-top: 16px;">
+                    <input type="checkbox" id="inputForceDeleteImage" checked>
+                    <label for="inputForceDeleteImage">Force removal (`--force` mode)</label>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" id="cancelDeleteImageBtn">Cancel</button>
+                <button type="button" class="btn btn-danger" id="confirmDeleteImageBtn">Delete Image</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Custom Delete Network Confirmation Modal -->
+    <div class="modal-backdrop" id="deleteNetworkModal">
+        <div class="modal-card small">
+            <div class="modal-header">
+                <div class="danger-header">
+                    <div class="alert-icon">
+                        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg>
+                    </div>
+                    <div>
+                        <h3>Delete Network</h3>
+                        <p class="modal-subtitle">Remove Docker network endpoint</p>
+                    </div>
+                </div>
+                <button class="close-btn" id="closeDeleteNetworkModalBtn">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p>Are you sure you want to prune network <strong id="deleteNetworkTargetName" style="color: var(--rose);"></strong>?</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" id="cancelDeleteNetworkBtn">Cancel</button>
+                <button type="button" class="btn btn-danger" id="confirmDeleteNetworkBtn">Delete Network</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Custom Delete Volume Confirmation Modal -->
+    <div class="modal-backdrop" id="deleteVolumeModal">
+        <div class="modal-card small">
+            <div class="modal-header">
+                <div class="danger-header">
+                    <div class="alert-icon">
+                        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>
+                    </div>
+                    <div>
+                        <h3>Delete Storage Volume</h3>
+                        <p class="modal-subtitle">Purge persistent storage mount</p>
+                    </div>
+                </div>
+                <button class="close-btn" id="closeDeleteVolumeModalBtn">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p>Are you sure you want to remove storage volume <strong id="deleteVolumeTargetName" style="color: var(--rose);"></strong>?</p>
+                <div class="form-checkbox" style="margin-top: 16px;">
+                    <input type="checkbox" id="inputForceDeleteVolume" checked>
+                    <label for="inputForceDeleteVolume">Force deletion (`--force` mode)</label>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" id="cancelDeleteVolumeBtn">Cancel</button>
+                <button type="button" class="btn btn-danger" id="confirmDeleteVolumeBtn">Delete Volume</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Container Inspect Drawer -->
+    <div class="modal-backdrop" id="inspectModal">
+        <div class="modal-card wide">
+            <div class="modal-header">
+                <div>
+                    <h3 id="inspectTitle">Container Details</h3>
+                    <p class="modal-subtitle">Summary, environment variables, and configuration</p>
+                </div>
+                <button class="close-btn" id="closeInspectBtn">&times;</button>
+            </div>
+            <div class="inspect-body">
+                <div class="inspect-tabs">
+                    <button class="tab-btn active" data-tab="tabSummary">Summary</button>
+                    <button class="tab-btn" data-tab="tabEnv">Environment Vars</button>
+                    <button class="tab-btn" data-tab="tabJson">Raw JSON</button>
+                </div>
+                <div class="tab-content active" id="tabSummary">
+                    <div class="inspect-info-grid" id="inspectSummaryGrid"></div>
+                </div>
+                <div class="tab-content hidden" id="tabEnv">
+                    <pre class="code-block" id="inspectEnvBlock"></pre>
+                </div>
+                <div class="tab-content hidden" id="tabJson">
+                    <pre class="code-block" id="inspectJsonBlock"></pre>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- A-Z Detailed Image Inspect Modal -->
+    <div class="modal-backdrop" id="inspectImageModal">
+        <div class="modal-card wide">
+            <div class="modal-header">
+                <div>
+                    <h3 id="inspectImageTitle">Image A-Z Specification</h3>
+                    <p class="modal-subtitle">Architecture, layers, environment, entrypoint & configuration</p>
+                </div>
+                <button class="close-btn" id="closeInspectImageBtn">&times;</button>
+            </div>
+            <div class="inspect-body">
+                <div class="inspect-tabs">
+                    <button class="tab-btn active" data-tab="tabImageSummary">Overview</button>
+                    <button class="tab-btn" data-tab="tabImageEnv">Env & Ports</button>
+                    <button class="tab-btn" data-tab="tabImageJson">Raw Specification</button>
+                </div>
+                <div class="tab-content active" id="tabImageSummary">
+                    <div class="inspect-info-grid" id="inspectImageSummaryGrid"></div>
+                </div>
+                <div class="tab-content hidden" id="tabImageEnv">
+                    <pre class="code-block" id="inspectImageEnvBlock"></pre>
+                </div>
+                <div class="tab-content hidden" id="tabImageJson">
+                    <pre class="code-block" id="inspectImageJsonBlock"></pre>
+                </div>
+            </div>
+        </div>
+    </div>

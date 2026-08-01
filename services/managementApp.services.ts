@@ -367,4 +367,109 @@ export const deleteImageByIdOrTag = async (identifier: string, force: boolean = 
     }
 };
 
+/**
+ * Inspects a single Docker image by ID or Tag (A-Z details)
+ */
+export const inspectImageByIdOrTag = async (identifier: string) => {
+    if (!identifier) {
+        throw new Error("Image ID or Tag is required");
+    }
+    const imageRef = docker.getImage(identifier);
+    const inspectData = await imageRef.inspect();
+
+    return {
+        id: inspectData.Id.replace(/^sha256:/, "").substring(0, 12),
+        fullId: inspectData.Id,
+        repoTags: inspectData.RepoTags || [],
+        repoDigests: inspectData.RepoDigests || [],
+        comment: inspectData.Comment,
+        created: inspectData.Created,
+        architecture: inspectData.Architecture,
+        os: inspectData.Os,
+        sizeMb: (inspectData.Size / (1024 * 1024)).toFixed(2) + " MB",
+        author: inspectData.Author,
+        env: inspectData.Config?.Env || [],
+        exposedPorts: Object.keys(inspectData.Config?.ExposedPorts || {}),
+        cmd: inspectData.Config?.Cmd || [],
+        entrypoint: inspectData.Config?.Entrypoint || [],
+        volumes: Object.keys(inspectData.Config?.Volumes || {}),
+        layersCount: inspectData.RootFS?.Layers?.length || 0,
+        raw: inspectData,
+    };
+};
+
+/**
+ * Searches Docker Hub for image auto-complete
+ */
+export const searchDockerHubImages = async (query: string) => {
+    if (!query || query.length < 2) return [];
+    try {
+        const results = await docker.searchImages({ term: query });
+        return results.slice(0, 8).map((r: any) => ({
+            name: r.name,
+            description: r.description,
+            isOfficial: r.is_official,
+            stars: r.star_count,
+        }));
+    } catch (err) {
+        console.error("Docker Hub search error:", err);
+        return [];
+    }
+};
+
+/**
+ * Lists Docker networks on host
+ */
+export const listNetworks = async () => {
+    const networks = await docker.listNetworks();
+    return networks.map((net) => ({
+        id: net.Id.substring(0, 12),
+        name: net.Name,
+        driver: net.Driver,
+        scope: net.Scope,
+        subnet: net.IPAM?.Config?.[0]?.Subnet || "N/A",
+        gateway: net.IPAM?.Config?.[0]?.Gateway || "N/A",
+        containersCount: Object.keys(net.Containers || {}).length,
+    }));
+};
+
+/**
+ * Lists Docker volumes on host
+ */
+export const listVolumes = async () => {
+    const result = await docker.listVolumes();
+    const volumes = result.Volumes || [];
+    return volumes.map((vol) => ({
+        name: vol.Name,
+        driver: vol.Driver,
+        mountpoint: vol.Mountpoint,
+        scope: vol.Scope,
+        created: (vol as any).CreatedAt || "N/A",
+    }));
+};
+
+/**
+ * Deletes a Docker network by ID or Name
+ */
+export const deleteNetworkByIdOrName = async (identifier: string) => {
+    if (!identifier) {
+        throw new Error("Network ID or Name is required");
+    }
+    const network = docker.getNetwork(identifier);
+    await network.remove();
+    return { network: identifier, removed: true };
+};
+
+/**
+ * Deletes a Docker volume by Name
+ */
+export const deleteVolumeByName = async (name: string, force: boolean = false) => {
+    if (!name) {
+        throw new Error("Volume Name is required");
+    }
+    const volume = docker.getVolume(name);
+    await volume.remove({ force });
+    return { volume: name, removed: true };
+};
+
 

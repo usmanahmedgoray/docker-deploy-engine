@@ -7,12 +7,15 @@ import { config } from "./config/app.config";
 // 1. Management API Server (internal port)
 const managementApp = express();
 
+managementApp.set("view engine", "ejs");
+managementApp.set("views", path.join(process.cwd(), "views"));
+
 managementApp.use(express.json());
-managementApp.use(express.static(path.join(process.cwd(), "public")));
+managementApp.use(express.static(path.join(process.cwd(), "public"), { index: false }));
 managementApp.use("/", managementAppRoutes);
 
 managementApp.get("/", (req: Request, res: Response) => {
-    res.sendFile(path.join(process.cwd(), "public", "index.html"));
+    res.render("index", { config });
 });
 
 managementApp.use((req: Request, res: Response) => {

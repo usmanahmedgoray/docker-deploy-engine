@@ -8,15 +8,35 @@ import {
     containerPowerAction,
     listImages,
     deleteImageByIdOrTag,
+    inspectImage,
+    searchDockerHub,
+    getNetworks,
+    getVolumes,
+    deleteNetwork,
+    deleteVolume,
 } from "../controller/managementApp.controller";
 
 export const managementAppRoutes = Router();
 
+// Search Docker Hub for auto-complete
+managementAppRoutes.get("/image/search", searchDockerHub);
+
 // List all images
 managementAppRoutes.get("/image", listImages);
 
+// Inspect single image A-Z details
+managementAppRoutes.get("/image/inspect/:identifier", inspectImage);
+
 // Delete single image by ID or Tag
 managementAppRoutes.delete("/image/:identifier", deleteImageByIdOrTag);
+
+// Networks routes
+managementAppRoutes.get("/network", getNetworks);
+managementAppRoutes.delete("/network/:identifier", deleteNetwork);
+
+// Volumes routes
+managementAppRoutes.get("/volume", getVolumes);
+managementAppRoutes.delete("/volume/:identifier", deleteVolume);
 
 // List all containers
 managementAppRoutes.get("/container", listContainers);

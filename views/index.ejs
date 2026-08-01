@@ -1,0 +1,207 @@
+<%- include('partials/header') %>
+
+        <!-- Main Views Container -->
+        <main class="main-content">
+            
+            <!-- VIEW 1: CONTAINERS DASHBOARD -->
+            <section id="viewContainers" class="view-panel active">
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-icon purple">
+                            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="2" width="20" height="8" rx="2"/><rect x="2" y="14" width="20" height="8" rx="2"/></svg>
+                        </div>
+                        <div class="stat-info">
+                            <span class="stat-label">Active Containers</span>
+                            <h2 class="stat-value" id="statRunningCount">0</h2>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon cyan">
+                            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+                        </div>
+                        <div class="stat-info">
+                            <span class="stat-label">Subdomain Router</span>
+                            <h2 class="stat-value" id="statDomain"><%= config.domain %>:<%= config.port %></h2>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon emerald">
+                            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"/></svg>
+                        </div>
+                        <div class="stat-info">
+                            <span class="stat-label">Bridge Network</span>
+                            <h2 class="stat-value"><%= config.dockerNetwork %></h2>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="section-header">
+                    <div>
+                        <h2>Managed Containers</h2>
+                        <p class="subtitle">Live container lifecycle control, status badges, and subdomain URLs</p>
+                    </div>
+                    <button class="btn btn-secondary" id="refreshContainersBtn">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 4v6h-6"/><path d="M1 20v-6h6"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+                        <span>Refresh</span>
+                    </button>
+                </div>
+
+                <div class="container-grid" id="containerGrid">
+                    <!-- Containers rendered dynamically with Skeleton loader -->
+                </div>
+            </section>
+
+            <!-- VIEW 2: DOCKER IMAGES -->
+            <section id="viewImages" class="view-panel hidden">
+                <div class="section-header">
+                    <div>
+                        <h2>Local Docker Images</h2>
+                        <p class="subtitle">Cached image layers and repository tags on host machine</p>
+                    </div>
+                    <button class="btn btn-secondary" id="refreshImagesBtn">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 4v6h-6"/><path d="M1 20v-6h6"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+                        <span>Refresh Images</span>
+                    </button>
+                </div>
+
+                <div class="table-card">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Repository / Tag</th>
+                                <th>Image ID</th>
+                                <th>Size</th>
+                                <th>Created</th>
+                                <th style="text-align: right;">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="imagesTableBody">
+                            <!-- Images rendered dynamically -->
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- VIEW 3: NETWORKS -->
+            <section id="viewNetworks" class="view-panel hidden">
+                <div class="section-header">
+                    <div>
+                        <h2>Docker Networks</h2>
+                        <p class="subtitle">Network drivers, scopes, subnets, and connected endpoints</p>
+                    </div>
+                    <button class="btn btn-secondary" id="refreshNetworksBtn">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 4v6h-6"/><path d="M1 20v-6h6"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+                        <span>Refresh Networks</span>
+                    </button>
+                </div>
+
+                <div class="table-card">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Network Name</th>
+                                <th>ID</th>
+                                <th>Driver</th>
+                                <th>Subnet / Gateway</th>
+                                <th>Scope</th>
+                                <th>Attached Containers</th>
+                            </tr>
+                        </thead>
+                        <tbody id="networksTableBody">
+                            <!-- Networks rendered dynamically -->
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- VIEW 4: VOLUMES -->
+            <section id="viewVolumes" class="view-panel hidden">
+                <div class="section-header">
+                    <div>
+                        <h2>Docker Volumes</h2>
+                        <p class="subtitle">Persistent volume mounts and host storage paths</p>
+                    </div>
+                    <button class="btn btn-secondary" id="refreshVolumesBtn">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 4v6h-6"/><path d="M1 20v-6h6"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+                        <span>Refresh Volumes</span>
+                    </button>
+                </div>
+
+                <div class="table-card">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Volume Name</th>
+                                <th>Driver</th>
+                                <th>Mountpoint</th>
+                                <th>Scope</th>
+                            </tr>
+                        </thead>
+                        <tbody id="volumesTableBody">
+                            <!-- Volumes rendered dynamically -->
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- VIEW 5: METRICS & INTERNAL IP LIST -->
+            <section id="viewMetrics" class="view-panel hidden">
+                <div class="section-header">
+                    <div>
+                        <h2>Engine Metrics & Network Allocation</h2>
+                        <p class="subtitle">Internal IP assignments and reverse proxy routing table</p>
+                    </div>
+                </div>
+
+                <div class="table-card">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Container Name</th>
+                                <th>Internal IP (<%= config.dockerNetwork %>)</th>
+                                <th>Status</th>
+                                <th>Proxy URL</th>
+                            </tr>
+                        </thead>
+                        <tbody id="metricsTableBody">
+                            <!-- Metrics IP rows -->
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- VIEW 6: SYSTEM CONFIG & ENV -->
+            <section id="viewConfig" class="view-panel hidden">
+                <div class="section-header">
+                    <div>
+                        <h2>Environment & System Configuration</h2>
+                        <p class="subtitle">Loaded environment variables and runtime settings</p>
+                    </div>
+                </div>
+
+                <div class="config-grid">
+                    <div class="config-card">
+                        <h3>Active Environment (.env)</h3>
+                        <div class="config-list" id="configList">
+                            <div class="config-item"><span>PORT (Public Entrypoint):</span> <strong><%= config.port %></strong></div>
+                            <div class="config-item"><span>MANAGEMENT_PORT (Internal API):</span> <strong><%= config.managementPort %></strong></div>
+                            <div class="config-item"><span>MANAGEMENT_HOST:</span> <strong><%= config.managementHost %></strong></div>
+                            <div class="config-item"><span>DOMAIN (Base Domain):</span> <strong><%= config.domain %></strong></div>
+                            <div class="config-item"><span>DOCKER_NETWORK:</span> <strong><%= config.dockerNetwork %></strong></div>
+                            <div class="config-item"><span>NODE_ENV:</span> <strong>production</strong></div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+        </main>
+    </div>
+
+<%- include('partials/modals') %>
+
+    <!-- Toast Notifications -->
+    <div class="toast-container" id="toastContainer"></div>
+
+    <script src="/app.js"></script>
+</body>
+</html>
