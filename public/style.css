@@ -328,7 +328,6 @@ body {
     border: 1px solid rgba(6, 182, 212, 0.3);
 }
 
-/* Reusable Professional Copy-to-Clipboard Badge */
 .copy-badge {
     display: inline-flex;
     align-items: center;
@@ -343,6 +342,16 @@ body {
     cursor: pointer;
     transition: var(--transition);
     user-select: none;
+    max-width: 100%;
+}
+
+.copy-badge-text {
+    display: inline-block;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    max-width: 280px;
+    vertical-align: middle;
 }
 
 .copy-badge:hover {

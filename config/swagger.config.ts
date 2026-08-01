@@ -258,5 +258,5 @@ const customCss = `
 `;
 
 export const setupSwagger = (app: any) => {
-    app.use("/api/docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec, { customCss }));
+    app.use(["/api-docs", "/docs"], swaggerUi.serve, swaggerUi.setup(swaggerSpec, { customCss }));
 };
