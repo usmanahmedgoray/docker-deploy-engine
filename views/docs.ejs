@@ -291,7 +291,7 @@
             margin: 18px 0;
             font-size: 14px; line-height: 1.6;
         }
-        .callout-icon { flex-shrink: 0; margin-top: 1px; font-size: 16px; }
+        .callout-icon { flex-shrink: 0; margin-top: 1px; display: flex; align-items: flex-start; color: inherit; }
         .callout p { margin: 0; }
 
         .callout.info { background: rgba(99,102,241,0.08); border-left: 3px solid var(--primary); color: #a5b4fc; }
@@ -336,16 +336,11 @@
         }
         .feature-card:hover { border-color: var(--border-hl); transform: translateY(-2px); }
 
-        .fc-icon {
-            width: 40px; height: 40px; border-radius: 10px;
-            display: flex; align-items: center; justify-content: center;
-            margin-bottom: 14px; font-size: 20px;
-        }
-
-        .fc-icon.purple { background: rgba(99,102,241,0.12); }
-        .fc-icon.cyan { background: rgba(6,182,212,0.12); }
-        .fc-icon.emerald { background: rgba(16,185,129,0.12); }
-        .fc-icon.amber { background: rgba(245,158,11,0.12); }
+        .fc-icon { width: 44px; height: 44px; border-radius: 12px; display: flex; align-items: center; justify-content: center; margin-bottom: 14px; }
+        .fc-icon.purple { background: rgba(99,102,241,0.12); color: #818cf8; }
+        .fc-icon.cyan    { background: rgba(6,182,212,0.12);  color: #22d3ee; }
+        .fc-icon.emerald { background: rgba(16,185,129,0.12); color: #34d399; }
+        .fc-icon.amber   { background: rgba(245,158,11,0.12); color: #fbbf24; }
 
         .feature-card h4 { font-size: 15px; font-weight: 700; color: var(--text-bright); margin-bottom: 8px; }
         .feature-card p { font-size: 13.5px; color: var(--text-muted); line-height: 1.6; margin: 0; }
@@ -634,22 +629,30 @@
 
             <div class="feature-grid">
                 <div class="feature-card">
-                    <div class="fc-icon purple">🚀</div>
+                    <div class="fc-icon purple">
+                        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+                    </div>
                     <h4>Instant Deployment</h4>
                     <p>Pull, create, start, and proxy a container with a single API call or from the dashboard console.</p>
                 </div>
                 <div class="feature-card">
-                    <div class="fc-icon cyan">🌐</div>
+                    <div class="fc-icon cyan">
+                        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/><line x1="2" y1="12" x2="22" y2="12"/></svg>
+                    </div>
                     <h4>Dynamic Subdomain Proxy</h4>
-                    <p>Every container on the <code>deploy-engine</code> network gets a <code>name.localhost:4000</code> URL automatically.</p>
+                    <p>Every container on the <code><%= config.dockerNetwork %></code> network gets a <code>name.<%= config.domain %>:<%= config.port %></code> URL automatically.</p>
                 </div>
                 <div class="feature-card">
-                    <div class="fc-icon emerald">🔒</div>
+                    <div class="fc-icon emerald">
+                        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="3"/><path d="M9 12l2 2 4-4"/></svg>
+                    </div>
                     <h4>Full Lifecycle Control</h4>
                     <p>Start, stop, pause, resume, inspect, and delete containers — with confirmation dialogs on destructive actions.</p>
                 </div>
                 <div class="feature-card">
-                    <div class="fc-icon amber">📊</div>
+                    <div class="fc-icon amber">
+                        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+                    </div>
                     <h4>Real-time Metrics</h4>
                     <p>Monitor CPU, memory, and network I/O for running containers from the metrics dashboard tab.</p>
                 </div>
@@ -673,11 +676,11 @@
             <table>
                 <thead><tr><th>URL</th><th>Description</th></tr></thead>
                 <tbody>
-                    <tr><td><code>http://localhost:4000/</code></td><td>Landing page</td></tr>
-                    <tr><td><code>http://localhost:4000/app</code></td><td>Dashboard console</td></tr>
-                    <tr><td><code>http://localhost:4000/docs</code></td><td>This documentation</td></tr>
-                    <tr><td><code>http://localhost:4000/api-docs</code></td><td>Swagger OpenAPI UI</td></tr>
-                    <tr><td><code>http://[container].localhost:4000</code></td><td>Dynamic subdomain proxy</td></tr>
+                    <tr><td><code>http://<%= config.domain %>:<%= config.port %>/</code></td><td>Landing page</td></tr>
+                    <tr><td><code>http://<%= config.domain %>:<%= config.port %>/app</code></td><td>Dashboard console</td></tr>
+                    <tr><td><code>http://<%= config.domain %>:<%= config.port %>/docs</code></td><td>This documentation</td></tr>
+                    <tr><td><code>http://<%= config.domain %>:<%= config.port %>/api-docs</code></td><td>Swagger OpenAPI UI</td></tr>
+                    <tr><td><code>http://[container].<%= config.domain %>:<%= config.port %></code></td><td>Dynamic subdomain proxy</td></tr>
                 </tbody>
             </table>
         </section>
@@ -690,7 +693,7 @@
             </div>
 
             <div class="callout info">
-                <span class="callout-icon">💡</span>
+                <span class="callout-icon"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg></span>
                 <p><strong>Prerequisites:</strong> Docker Desktop (or Docker Engine) installed and running. Bun v1.3+ for local development.</p>
             </div>
 
@@ -700,7 +703,7 @@
 
             <h3>2. Start with Docker Compose</h3>
             <div class="cmd">docker compose up -d --build<button class="copy-btn">Copy</button></div>
-            <p>This builds the image, creates the <code>deploy-engine</code> bridge network, and starts <code>dockpoly-engine</code> container. Visit <code>http://localhost:4000</code>.</p>
+            <p>This builds the image, creates the <code>deploy-engine</code> bridge network, and starts <code>dockpoly-engine</code> container. Visit <code>http://<%= config.domain %>:<%= config.port %></code>.</p>
 
             <h2>Option B — Local Development</h2>
 
@@ -732,12 +735,12 @@
             <div class="cmd">docker compose up -d --build<button class="copy-btn">Copy</button></div>
 
             <h2>Verify it's working</h2>
-            <div class="cmd">curl http://localhost:4000/container<button class="copy-btn">Copy</button></div>
+            <div class="cmd">curl http://<%= config.domain %>:<%= config.port %>/container<button class="copy-btn">Copy</button></div>
             <p>You should receive a JSON array of containers. An empty array <code>[]</code> is valid — it means no containers are running on the <code>deploy-engine</code> network yet.</p>
 
             <div class="callout success">
-                <span class="callout-icon">✅</span>
-                <p>Dashboard at <strong>http://localhost:4000/app</strong> — ready to deploy your first container!</p>
+                <span class="callout-icon"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg></span>
+                <p>Dashboard at <strong>http://<%= config.domain %>:<%= config.port %>/app</strong> — ready to deploy your first container!</p>
             </div>
         </section>
 
@@ -765,7 +768,7 @@
                     <!-- Client -->
                     <rect x="10" y="110" width="120" height="70" rx="10" fill="#0f1629" stroke="#6366f1" stroke-width="1.5"/>
                     <text x="70" y="138" text-anchor="middle" fill="#a5b4fc" font-size="10" font-weight="700">CLIENT BROWSER</text>
-                    <text x="70" y="156" text-anchor="middle" fill="#6366f1" font-size="10">web-demo.localhost</text>
+                    <text x="70" y="156" text-anchor="middle" fill="#6366f1" font-size="10">web-demo.<%= config.domain %></text>
                     <text x="70" y="170" text-anchor="middle" fill="#818cf8" font-size="10" font-weight="700">:4000</text>
 
                     <!-- Arrow 1 -->
@@ -869,72 +872,155 @@
         <section class="doc-section" id="section-containers">
             <div class="section-hero">
                 <h1>Container Management</h1>
-                <p>Full Docker container lifecycle — deploy, control, inspect, and destroy.</p>
+                <p>Full Docker container lifecycle — deploy, control, inspect, and destroy. Every action happens through Dockerode speaking directly to the Docker socket.</p>
             </div>
 
-            <h2>Container Lifecycle</h2>
+            <h2>How Deployment Works</h2>
+            <p>When you hit <code>POST /container</code>, NexaDock does not just call <code>docker run</code>. It executes a precise multi-step orchestration sequence:</p>
+
+            <div class="step-list">
+                <div class="step-item">
+                    <div class="step-num">1</div>
+                    <div class="step-body">
+                        <h4>Image Availability Check</h4>
+                        <p>Checks if the requested <code>image:tag</code> exists in the local Docker image cache. If not, it automatically pulls from Docker Hub — streaming progress to the response.</p>
+                    </div>
+                </div>
+                <div class="step-item">
+                    <div class="step-num">2</div>
+                    <div class="step-body">
+                        <h4>Container Creation</h4>
+                        <p>Calls <code>docker.createContainer()</code> via Dockerode with the full config — name, image, environment variables, port bindings, <code>AutoRemove</code> flag, and labels.</p>
+                    </div>
+                </div>
+                <div class="step-item">
+                    <div class="step-num">3</div>
+                    <div class="step-body">
+                        <h4>Network Attachment</h4>
+                        <p>Attaches the container to the <code>deploy-engine</code> bridge network via <code>network.connect()</code>. This is what makes the subdomain proxy work — the container gets a stable internal IP.</p>
+                    </div>
+                </div>
+                <div class="step-item">
+                    <div class="step-num">4</div>
+                    <div class="step-body">
+                        <h4>Container Start</h4>
+                        <p>Calls <code>container.start()</code>. The container is now running, reachable at its internal IP, and accessible via <code>[name].<%= config.domain %>:<%= config.port %></code>.</p>
+                    </div>
+                </div>
+            </div>
+
+            <h2>Container Lifecycle State Machine</h2>
             <div class="arch-box">
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 660 80" width="100%" style="max-width:660px;font-family:Inter,sans-serif;">
-                    <defs><marker id="a" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L0,6 L8,3 z" fill="#6366f1"/></marker></defs>
-                    <rect x="5" y="20" width="90" height="40" rx="8" fill="rgba(99,102,241,0.1)" stroke="#6366f1" stroke-width="1.5"/>
-                    <text x="50" y="44" text-anchor="middle" fill="#a5b4fc" font-size="12" font-weight="700" font-family="Inter,sans-serif">Created</text>
-                    <line x1="97" y1="40" x2="132" y2="40" stroke="#6366f1" stroke-width="1.5" marker-end="url(#a)"/>
-                    <rect x="134" y="20" width="90" height="40" rx="8" fill="rgba(16,185,129,0.1)" stroke="#10b981" stroke-width="1.5"/>
-                    <text x="179" y="44" text-anchor="middle" fill="#34d399" font-size="12" font-weight="700" font-family="Inter,sans-serif">Running</text>
-                    <line x1="225" y1="40" x2="260" y2="40" stroke="#6366f1" stroke-width="1.5" marker-end="url(#a)"/>
-                    <rect x="262" y="20" width="90" height="40" rx="8" fill="rgba(245,158,11,0.1)" stroke="#f59e0b" stroke-width="1.5"/>
-                    <text x="307" y="44" text-anchor="middle" fill="#fbbf24" font-size="12" font-weight="700" font-family="Inter,sans-serif">Paused</text>
-                    <line x1="307" y1="60" x2="307" y2="74" stroke="#6366f1" stroke-width="1" stroke-dasharray="3,2"/>
-                    <line x1="307" y1="74" x2="179" y2="74" stroke="#6366f1" stroke-width="1" stroke-dasharray="3,2" marker-end="url(#a)"/>
-                    <line x1="353" y1="40" x2="388" y2="40" stroke="#6366f1" stroke-width="1.5" marker-end="url(#a)"/>
-                    <rect x="390" y="20" width="90" height="40" rx="8" fill="rgba(239,68,68,0.1)" stroke="#ef4444" stroke-width="1.5"/>
-                    <text x="435" y="44" text-anchor="middle" fill="#f87171" font-size="12" font-weight="700" font-family="Inter,sans-serif">Stopped</text>
-                    <line x1="481" y1="40" x2="516" y2="40" stroke="#6366f1" stroke-width="1.5" marker-end="url(#a)"/>
-                    <rect x="518" y="20" width="90" height="40" rx="8" fill="rgba(127,29,29,0.2)" stroke="#7f1d1d" stroke-width="1.5"/>
-                    <text x="563" y="44" text-anchor="middle" fill="#fca5a5" font-size="12" font-weight="700" font-family="Inter,sans-serif">Deleted</text>
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 700 180" width="100%" style="max-width:700px;font-family:Inter,sans-serif;">
+                    <defs>
+                        <marker id="ac" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L0,6 L8,3 z" fill="#6366f1"/></marker>
+                        <marker id="ac2" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L0,6 L8,3 z" fill="#f59e0b"/></marker>
+                        <marker id="ac3" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L0,6 L8,3 z" fill="#ef4444"/></marker>
+                    </defs>
+                    <!-- Created -->
+                    <rect x="10" y="60" width="110" height="50" rx="10" fill="rgba(99,102,241,0.1)" stroke="#6366f1" stroke-width="1.5"/>
+                    <text x="65" y="83" text-anchor="middle" fill="#a5b4fc" font-size="11" font-weight="700" font-family="Inter,sans-serif">Created</text>
+                    <text x="65" y="98" text-anchor="middle" fill="#6366f1" font-size="9" font-family="Inter,sans-serif">container created</text>
+                    <line x1="122" y1="85" x2="150" y2="85" stroke="#6366f1" stroke-width="1.5" marker-end="url(#ac)"/>
+                    <text x="136" y="78" text-anchor="middle" fill="#6b7694" font-size="9" font-family="Inter,sans-serif">start()</text>
+                    <!-- Running -->
+                    <rect x="152" y="50" width="120" height="70" rx="10" fill="rgba(16,185,129,0.12)" stroke="#10b981" stroke-width="2"/>
+                    <circle cx="212" cy="72" r="5" fill="#10b981"/>
+                    <text x="212" y="92" text-anchor="middle" fill="#34d399" font-size="12" font-weight="800" font-family="Inter,sans-serif">Running</text>
+                    <text x="212" y="108" text-anchor="middle" fill="#6b7694" font-size="9" font-family="Inter,sans-serif">active + proxied</text>
+                    <!-- Paused branch -->
+                    <line x1="272" y1="85" x2="305" y2="85" stroke="#f59e0b" stroke-width="1.5" stroke-dasharray="4,2" marker-end="url(#ac2)"/>
+                    <text x="288" y="78" text-anchor="middle" fill="#6b7694" font-size="9" font-family="Inter,sans-serif">pause()</text>
+                    <rect x="307" y="60" width="110" height="50" rx="10" fill="rgba(245,158,11,0.1)" stroke="#f59e0b" stroke-width="1.5"/>
+                    <text x="362" y="83" text-anchor="middle" fill="#fbbf24" font-size="11" font-weight="700" font-family="Inter,sans-serif">Paused</text>
+                    <text x="362" y="98" text-anchor="middle" fill="#6b7694" font-size="9" font-family="Inter,sans-serif">frozen in memory</text>
+                    <!-- Paused → Running -->
+                    <path d="M362 60 Q362 30 212 30 Q212 50 212 50" stroke="#f59e0b" stroke-width="1" stroke-dasharray="3,2" fill="none" marker-end="url(#ac2)"/>
+                    <text x="287" y="24" text-anchor="middle" fill="#6b7694" font-size="9" font-family="Inter,sans-serif">unpause()</text>
+                    <!-- Running → Stopped -->
+                    <line x1="272" y1="105" x2="305" y2="128" stroke="#ef4444" stroke-width="1.5" stroke-dasharray="4,2" marker-end="url(#ac3)"/>
+                    <text x="275" y="125" fill="#6b7694" font-size="9" font-family="Inter,sans-serif">stop()</text>
+                    <!-- Stopped -->
+                    <rect x="307" y="125" width="110" height="50" rx="10" fill="rgba(239,68,68,0.1)" stroke="#ef4444" stroke-width="1.5"/>
+                    <text x="362" y="148" text-anchor="middle" fill="#f87171" font-size="11" font-weight="700" font-family="Inter,sans-serif">Stopped</text>
+                    <text x="362" y="163" text-anchor="middle" fill="#6b7694" font-size="9" font-family="Inter,sans-serif">not running</text>
+                    <!-- Stopped → Running -->
+                    <path d="M307 150 Q260 150 260 105" stroke="#6366f1" stroke-width="1" stroke-dasharray="3,2" fill="none" marker-end="url(#ac)"/>
+                    <text x="240" y="133" text-anchor="middle" fill="#6b7694" font-size="9" font-family="Inter,sans-serif">start()</text>
+                    <!-- Stopped → Deleted -->
+                    <line x1="419" y1="150" x2="450" y2="150" stroke="#7f1d1d" stroke-width="1.5" marker-end="url(#ac3)"/>
+                    <text x="434" y="143" text-anchor="middle" fill="#6b7694" font-size="9" font-family="Inter,sans-serif">rm()</text>
+                    <rect x="452" y="125" width="110" height="50" rx="10" fill="rgba(127,29,29,0.18)" stroke="#7f1d1d" stroke-width="1.5"/>
+                    <text x="507" y="148" text-anchor="middle" fill="#fca5a5" font-size="11" font-weight="700" font-family="Inter,sans-serif">Deleted</text>
+                    <text x="507" y="163" text-anchor="middle" fill="#6b7694" font-size="9" font-family="Inter,sans-serif">irreversible</text>
+                    <!-- Running → Deleted (force) -->
+                    <path d="M272 85 Q690 85 690 150 Q690 165 562 165" stroke="#7f1d1d" stroke-width="1" stroke-dasharray="3,2" fill="none" marker-end="url(#ac3)"/>
+                    <text x="650" y="128" fill="#6b7694" font-size="8" font-family="Inter,sans-serif">force=true</text>
                 </svg>
             </div>
 
             <h2>Deploy a Container</h2>
-            <div class="cmd">curl -X POST http://localhost:4000/container \
+            <div class="cmd">curl -X POST http://<%= config.domain %>:<%= config.port %>/container \
   -H "Content-Type: application/json" \
   -d '{"image":"nginx","tag":"alpine","containerName":"web-demo"}'<button class="copy-btn">Copy</button></div>
 
-            <h3>Request Body Schema</h3>
+            <h3>Full Request Body Schema</h3>
             <table>
-                <thead><tr><th>Field</th><th>Type</th><th>Required</th><th>Description</th></tr></thead>
+                <thead><tr><th>Field</th><th>Type</th><th>Required</th><th>Default</th><th>Description</th></tr></thead>
                 <tbody>
-                    <tr><td><code>image</code></td><td>string</td><td><span class="badge green">required</span></td><td>Docker Hub image name</td></tr>
-                    <tr><td><code>tag</code></td><td>string</td><td><span class="badge amber">optional</span></td><td>Image tag. Defaults to <code>latest</code></td></tr>
-                    <tr><td><code>containerName</code></td><td>string</td><td><span class="badge amber">optional</span></td><td>Unique container name for subdomain routing</td></tr>
-                    <tr><td><code>env</code></td><td>string[]</td><td><span class="badge amber">optional</span></td><td>Environment variables e.g. <code>["PORT=3000"]</code></td></tr>
-                    <tr><td><code>ports</code></td><td>object[]</td><td><span class="badge amber">optional</span></td><td>Port mappings <code>[{hostPort:"8080",containerPort:"80"}]</code></td></tr>
-                    <tr><td><code>autoRemove</code></td><td>boolean</td><td><span class="badge amber">optional</span></td><td>Auto-delete on stop. Default <code>false</code></td></tr>
+                    <tr><td><code>image</code></td><td>string</td><td><span class="badge green">required</span></td><td>—</td><td>Docker Hub image name e.g. <code>nginx</code>, <code>postgres</code>, <code>node</code></td></tr>
+                    <tr><td><code>tag</code></td><td>string</td><td><span class="badge amber">optional</span></td><td><code>latest</code></td><td>Image version tag e.g. <code>alpine</code>, <code>16-slim</code></td></tr>
+                    <tr><td><code>containerName</code></td><td>string</td><td><span class="badge amber">optional</span></td><td>auto-generated</td><td>Must be unique. Becomes your subdomain: <code>[name].<%= config.domain %>:<%= config.port %></code></td></tr>
+                    <tr><td><code>env</code></td><td>string[]</td><td><span class="badge amber">optional</span></td><td><code>[]</code></td><td>Environment variables in KEY=VALUE format: <code>["PORT=3000", "NODE_ENV=production"]</code></td></tr>
+                    <tr><td><code>ports</code></td><td>object[]</td><td><span class="badge amber">optional</span></td><td><code>[]</code></td><td>Port bindings: <code>[{"hostPort":"8080","containerPort":"80"}]</code></td></tr>
+                    <tr><td><code>autoRemove</code></td><td>boolean</td><td><span class="badge amber">optional</span></td><td><code>false</code></td><td>Automatically removes the container when it stops. Useful for one-shot tasks.</td></tr>
                 </tbody>
             </table>
 
-            <h2>List All Containers</h2>
-            <div class="cmd">curl http://localhost:4000/container<button class="copy-btn">Copy</button></div>
+            <h2>Power Control Actions</h2>
+            <p>All power control actions follow <code>POST /container/:identifier/:action</code>. The <code>identifier</code> can be the container <strong>name</strong> or <strong>ID</strong> (first 12 chars).</p>
 
-            <h2>Inspect Container</h2>
-            <div class="cmd">curl http://localhost:4000/container/web-demo<button class="copy-btn">Copy</button></div>
+            <table>
+                <thead><tr><th>Action</th><th>Command</th><th>When to use</th></tr></thead>
+                <tbody>
+                    <tr><td><code>start</code></td><td><span class="badge blue">POST</span> <code>/container/web-demo/start</code></td><td>Resume a stopped container</td></tr>
+                    <tr><td><code>stop</code></td><td><span class="badge blue">POST</span> <code>/container/web-demo/stop</code></td><td>Gracefully stop a running container (SIGTERM)</td></tr>
+                    <tr><td><code>pause</code></td><td><span class="badge blue">POST</span> <code>/container/web-demo/pause</code></td><td>Freeze container (SIGSTOP) — keeps memory, stops CPU</td></tr>
+                    <tr><td><code>unpause</code></td><td><span class="badge blue">POST</span> <code>/container/web-demo/unpause</code></td><td>Resume a paused container (SIGCONT)</td></tr>
+                </tbody>
+            </table>
 
-            <h2>Power Actions</h2>
-            <p>All power actions follow the pattern <code>POST /container/:id/:action</code></p>
-
-            <div class="cmd">curl -X POST http://localhost:4000/container/web-demo/start<button class="copy-btn">Copy</button></div>
-            <div class="cmd">curl -X POST http://localhost:4000/container/web-demo/stop<button class="copy-btn">Copy</button></div>
-            <div class="cmd">curl -X POST http://localhost:4000/container/web-demo/pause<button class="copy-btn">Copy</button></div>
-            <div class="cmd">curl -X POST http://localhost:4000/container/web-demo/unpause<button class="copy-btn">Copy</button></div>
+            <div class="cmd">curl -X POST http://<%= config.domain %>:<%= config.port %>/container/web-demo/stop<button class="copy-btn">Copy</button></div>
 
             <h2>Delete Container</h2>
-            <div class="cmd">curl -X DELETE "http://localhost:4000/container/web-demo?force=true"<button class="copy-btn">Copy</button></div>
+            <div class="cmd">curl -X DELETE "http://<%= config.domain %>:<%= config.port %>/container/web-demo?force=true"<button class="copy-btn">Copy</button></div>
+
+            <h2>Naming Best Practices</h2>
+            <div class="compare-grid">
+                <div class="compare-card do">
+                    <h4>✅ Good Names</h4>
+                    <ul>
+                        <li>Short, lowercase, hyphenated: <code>web-api</code></li>
+                        <li>Descriptive: <code>postgres-db</code>, <code>redis-cache</code></li>
+                        <li>Versioned: <code>api-v2</code></li>
+                    </ul>
+                </div>
+                <div class="compare-card dont">
+                    <h4>❌ Avoid</h4>
+                    <ul>
+                        <li>Spaces or special characters: <code>my app</code></li>
+                        <li>Starting with numbers: <code>1web</code></li>
+                        <li>Too long: breaks URL readability</li>
+                    </ul>
+                </div>
+            </div>
 
             <div class="callout warning">
-                <span class="callout-icon">⚠️</span>
-                <p><strong>Destructive.</strong> Deletion is permanent. The UI shows a confirmation dialog before executing. Use <code>force=true</code> to delete a running container without stopping it first.</p>
+                <span class="callout-icon"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></span>
+                <p><strong>Destructive.</strong> Container deletion is permanent and immediate. The dashboard shows a confirmation dialog before executing. Use <code>force=true</code> to skip the graceful stop step.</p>
             </div>
         </section>
+
 
         <!-- ════════ IMAGES ════════ -->
         <section class="doc-section" id="section-images">
@@ -945,7 +1031,7 @@
 
             <h2>Search Docker Hub (Auto-complete)</h2>
             <p>Used by the dashboard's deploy modal for real-time image search with star counts and official image badges.</p>
-            <div class="cmd">curl "http://localhost:4000/image/search?q=postgres"<button class="copy-btn">Copy</button></div>
+            <div class="cmd">curl "http://<%= config.domain %>:<%= config.port %>/image/search?q=postgres"<button class="copy-btn">Copy</button></div>
 
             <pre><code class="language-json">{
   "results": [
@@ -961,17 +1047,17 @@
 }</code></pre>
 
             <h2>List Local Cached Images</h2>
-            <div class="cmd">curl http://localhost:4000/image<button class="copy-btn">Copy</button></div>
+            <div class="cmd">curl http://<%= config.domain %>:<%= config.port %>/image<button class="copy-btn">Copy</button></div>
 
             <h2>Inspect Full Image Metadata (A-Z)</h2>
             <p>Returns architecture, OS, creation date, layer digests, size, environment variables, labels, exposed ports, entrypoint, and more.</p>
-            <div class="cmd">curl http://localhost:4000/image/inspect/nginx:alpine<button class="copy-btn">Copy</button></div>
+            <div class="cmd">curl http://<%= config.domain %>:<%= config.port %>/image/inspect/nginx:alpine<button class="copy-btn">Copy</button></div>
 
             <h2>Delete Local Image</h2>
-            <div class="cmd">curl -X DELETE "http://localhost:4000/image/nginx:alpine?force=true"<button class="copy-btn">Copy</button></div>
+            <div class="cmd">curl -X DELETE "http://<%= config.domain %>:<%= config.port %>/image/nginx:alpine?force=true"<button class="copy-btn">Copy</button></div>
 
             <div class="callout warning">
-                <span class="callout-icon">⚠️</span>
+                <span class="callout-icon"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></span>
                 <p>An image cannot be deleted while any container (even stopped) is using it. Remove dependent containers first.</p>
             </div>
         </section>
@@ -980,13 +1066,13 @@
         <section class="doc-section" id="section-proxy">
             <div class="section-hero">
                 <h1>Dynamic Subdomain Reverse Proxy</h1>
-                <p>Every deployed container instantly gets a <code>name.localhost:4000</code> URL with zero configuration.</p>
+                <p>Every deployed container instantly gets a <code>name.<%= config.domain %>:<%= config.port %></code> URL with zero configuration.</p>
             </div>
 
             <h2>How it Works</h2>
-            <pre><code class="language-plaintext">Request → http://web-demo.localhost:4000/api/users
+            <pre><code class="language-plaintext">Request → http://web-demo.<%= config.domain %>:<%= config.port %>/api/users
   ↓
-  proxy.ts parses Host header → "web-demo.localhost"
+  proxy.ts parses Host header → "web-demo.<%= config.domain %>"
   ↓
   Extracts subdomain → "web-demo"
   ↓
@@ -1013,10 +1099,10 @@
             </table>
 
             <h2>Accessing a Deployed Container</h2>
-            <div class="cmd">http://web-demo.localhost:4000<button class="copy-btn">Copy</button></div>
+            <div class="cmd">http://web-demo.<%= config.domain %>:<%= config.port %><button class="copy-btn">Copy</button></div>
 
             <div class="callout info">
-                <span class="callout-icon">💡</span>
+                <span class="callout-icon"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg></span>
                 <p>The container must be on the <code>deploy-engine</code> bridge network. All containers deployed via NexaDock are automatically attached.</p>
             </div>
 
@@ -1024,7 +1110,7 @@
             <div class="cmd">docker network connect deploy-engine my-existing-container<button class="copy-btn">Copy</button></div>
 
             <p>Then immediately access it via:</p>
-            <div class="cmd">http://my-existing-container.localhost:4000<button class="copy-btn">Copy</button></div>
+            <div class="cmd">http://my-existing-container.<%= config.domain %>:<%= config.port %><button class="copy-btn">Copy</button></div>
 
             <h2>Port Auto-selection Logic</h2>
             <p>The proxy selects the container's exposed port in this priority order:</p>
@@ -1045,13 +1131,13 @@
             </div>
 
             <h2>List All Networks</h2>
-            <div class="cmd">curl http://localhost:4000/network<button class="copy-btn">Copy</button></div>
+            <div class="cmd">curl http://<%= config.domain %>:<%= config.port %>/network<button class="copy-btn">Copy</button></div>
 
             <h2>Delete a Network</h2>
-            <div class="cmd">curl -X DELETE http://localhost:4000/network/my-custom-network<button class="copy-btn">Copy</button></div>
+            <div class="cmd">curl -X DELETE http://<%= config.domain %>:<%= config.port %>/network/my-custom-network<button class="copy-btn">Copy</button></div>
 
             <div class="callout danger">
-                <span class="callout-icon">🚨</span>
+                <span class="callout-icon"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="7.86 2 16.14 2 22 7.86 22 16.14 16.14 22 7.86 22 2 16.14 2 7.86 7.86 2"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg></span>
                 <p><strong>Critical:</strong> Never delete the <code>deploy-engine</code> network — it is required for the subdomain proxy to resolve container IPs. Deleting it will break all subdomain routing until the network is recreated and containers reconnected.</p>
             </div>
 
@@ -1068,13 +1154,13 @@
             </div>
 
             <h2>List All Volumes</h2>
-            <div class="cmd">curl http://localhost:4000/volume<button class="copy-btn">Copy</button></div>
+            <div class="cmd">curl http://<%= config.domain %>:<%= config.port %>/volume<button class="copy-btn">Copy</button></div>
 
             <h2>Delete a Volume</h2>
-            <div class="cmd">curl -X DELETE "http://localhost:4000/volume/my-data-volume?force=true"<button class="copy-btn">Copy</button></div>
+            <div class="cmd">curl -X DELETE "http://<%= config.domain %>:<%= config.port %>/volume/my-data-volume?force=true"<button class="copy-btn">Copy</button></div>
 
             <div class="callout warning">
-                <span class="callout-icon">⚠️</span>
+                <span class="callout-icon"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></span>
                 <p>Volumes can only be deleted when they are not mounted by any container (running or stopped). Stop and remove dependent containers first. Volume deletion is <strong>permanent</strong> — all data inside will be lost.</p>
             </div>
         </section>
@@ -1137,22 +1223,22 @@
             <div class="cmd">docker compose logs -f dockpoly-engine<button class="copy-btn">Copy</button></div>
 
             <h2>Container Operations</h2>
-            <div class="cmd">curl -X POST http://localhost:4000/container \
+            <div class="cmd">curl -X POST http://<%= config.domain %>:<%= config.port %>/container \
   -H "Content-Type: application/json" \
   -d '{"image":"nginx","tag":"alpine","containerName":"web-demo"}'<button class="copy-btn">Copy</button></div>
-            <div class="cmd">curl http://localhost:4000/container<button class="copy-btn">Copy</button></div>
-            <div class="cmd">curl -X POST http://localhost:4000/container/web-demo/stop<button class="copy-btn">Copy</button></div>
-            <div class="cmd">curl -X DELETE "http://localhost:4000/container/web-demo?force=true"<button class="copy-btn">Copy</button></div>
+            <div class="cmd">curl http://<%= config.domain %>:<%= config.port %>/container<button class="copy-btn">Copy</button></div>
+            <div class="cmd">curl -X POST http://<%= config.domain %>:<%= config.port %>/container/web-demo/stop<button class="copy-btn">Copy</button></div>
+            <div class="cmd">curl -X DELETE "http://<%= config.domain %>:<%= config.port %>/container/web-demo?force=true"<button class="copy-btn">Copy</button></div>
 
             <h2>Image Operations</h2>
-            <div class="cmd">curl "http://localhost:4000/image/search?q=postgres"<button class="copy-btn">Copy</button></div>
-            <div class="cmd">curl http://localhost:4000/image<button class="copy-btn">Copy</button></div>
-            <div class="cmd">curl http://localhost:4000/image/inspect/nginx:alpine<button class="copy-btn">Copy</button></div>
-            <div class="cmd">curl -X DELETE "http://localhost:4000/image/nginx:alpine?force=true"<button class="copy-btn">Copy</button></div>
+            <div class="cmd">curl "http://<%= config.domain %>:<%= config.port %>/image/search?q=postgres"<button class="copy-btn">Copy</button></div>
+            <div class="cmd">curl http://<%= config.domain %>:<%= config.port %>/image<button class="copy-btn">Copy</button></div>
+            <div class="cmd">curl http://<%= config.domain %>:<%= config.port %>/image/inspect/nginx:alpine<button class="copy-btn">Copy</button></div>
+            <div class="cmd">curl -X DELETE "http://<%= config.domain %>:<%= config.port %>/image/nginx:alpine?force=true"<button class="copy-btn">Copy</button></div>
 
             <h2>Network & Volume</h2>
-            <div class="cmd">curl http://localhost:4000/network<button class="copy-btn">Copy</button></div>
-            <div class="cmd">curl http://localhost:4000/volume<button class="copy-btn">Copy</button></div>
+            <div class="cmd">curl http://<%= config.domain %>:<%= config.port %>/network<button class="copy-btn">Copy</button></div>
+            <div class="cmd">curl http://<%= config.domain %>:<%= config.port %>/volume<button class="copy-btn">Copy</button></div>
             <div class="cmd">docker network connect deploy-engine my-container<button class="copy-btn">Copy</button></div>
         </section>
 
@@ -1186,7 +1272,7 @@ Ran 5 tests across 1 file. [2.23s]</code></pre>
             <p>Zero TypeScript errors expected on a clean build.</p>
 
             <div class="callout success">
-                <span class="callout-icon">✅</span>
+                <span class="callout-icon"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg></span>
                 <p>Always run both <code>bun test</code> and <code>bun x tsc --noEmit</code> before pushing to production. Both should pass with zero failures or errors.</p>
             </div>
         </section>
@@ -1201,7 +1287,7 @@ Ran 5 tests across 1 file. [2.23s]</code></pre>
             <h2>Should You Commit <code>.env</code>?</h2>
 
             <div class="callout danger">
-                <span class="callout-icon">🚫</span>
+                <span class="callout-icon"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="7.86 2 16.14 2 22 7.86 22 16.14 16.14 22 7.86 22 2 16.14 2 7.86 7.86 2"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg></span>
                 <p><strong>Never commit <code>.env</code> to git for production deployments.</strong> It may contain secrets (API keys, DB passwords, tokens). Add <code>.env</code> to <code>.gitignore</code> immediately.</p>
             </div>
 
@@ -1304,7 +1390,7 @@ export const config = {
             <div class="cmd">echo ".env" >> .gitignore<button class="copy-btn">Copy</button></div>
 
             <div class="callout success">
-                <span class="callout-icon">✅</span>
+                <span class="callout-icon"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg></span>
                 <p><strong>Summary:</strong> Use <code>.env</code> locally and with Docker Compose. Never commit it. Commit <code>.env.example</code> instead. In production CI/CD, inject variables as platform secrets or Docker secrets — never as files in the image.</p>
             </div>
         </section>
@@ -1346,7 +1432,7 @@ networks:
     name: deploy-engine</code></pre>
 
             <div class="callout info">
-                <span class="callout-icon">💡</span>
+                <span class="callout-icon"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg></span>
                 <p>The Docker socket mount (<code>/var/run/docker.sock</code>) is what allows NexaDock to control the host Docker daemon from inside the container. This is required for all container management functionality.</p>
             </div>
         </section>
@@ -1386,19 +1472,19 @@ navItems.forEach(item => {
 
 // ── Page Navigation System ────────────────────────────────
 const SECTIONS = [
-    { id: 'overview',      label: 'Overview',            icon: '🏠' },
-    { id: 'quickstart',    label: 'Quick Start',          icon: '⚡' },
-    { id: 'architecture',  label: 'Architecture',         icon: '🏗️' },
-    { id: 'containers',    label: 'Containers',           icon: '📦' },
-    { id: 'images',        label: 'Images & Registry',    icon: '🖼️' },
-    { id: 'proxy',         label: 'Subdomain Proxy',      icon: '🌐' },
-    { id: 'networks',      label: 'Networks',             icon: '🔌' },
-    { id: 'volumes',       label: 'Volumes',              icon: '💾' },
-    { id: 'rest-api',      label: 'REST API Reference',   icon: '↕️' },
-    { id: 'cli',           label: 'CLI Commands',         icon: '💻' },
-    { id: 'testing',       label: 'Testing & Validation', icon: '✅' },
-    { id: 'env',           label: '.env Reference',       icon: '🛡️' },
-    { id: 'config',        label: 'Configuration',        icon: '⚙️' },
+    { id: 'overview',     label: 'Overview',            icon: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>' },
+    { id: 'quickstart',   label: 'Quick Start',          icon: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>' },
+    { id: 'architecture', label: 'Architecture',         icon: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>' },
+    { id: 'containers',   label: 'Containers',           icon: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>' },
+    { id: 'images',       label: 'Images & Registry',    icon: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="12" x2="2" y2="12"/><path d="M5.45 5.11L2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/></svg>' },
+    { id: 'proxy',        label: 'Subdomain Proxy',      icon: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/><line x1="2" y1="12" x2="22" y2="12"/></svg>' },
+    { id: 'networks',     label: 'Networks',             icon: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>' },
+    { id: 'volumes',      label: 'Volumes',              icon: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg>' },
+    { id: 'rest-api',     label: 'REST API Reference',   icon: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 6l4-4 4 4"/><path d="M16 18l-4 4-4-4"/><line x1="12" y1="2" x2="12" y2="22"/></svg>' },
+    { id: 'cli',          label: 'CLI Commands',         icon: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/></svg>' },
+    { id: 'testing',      label: 'Testing & Validation', icon: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>' },
+    { id: 'env',          label: '.env Reference',       icon: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>' },
+    { id: 'config',       label: 'Configuration',        icon: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="21" x2="4" y2="14"/><line x1="4" y1="10" x2="4" y2="3"/><line x1="12" y1="21" x2="12" y2="12"/><line x1="12" y1="8" x2="12" y2="3"/><line x1="20" y1="21" x2="20" y2="16"/><line x1="20" y1="12" x2="20" y2="3"/><line x1="1" y1="14" x2="7" y2="14"/><line x1="9" y1="8" x2="15" y2="8"/><line x1="17" y1="16" x2="23" y2="16"/></svg>' },
 ];
 
 function renderPageNav(currentId) {

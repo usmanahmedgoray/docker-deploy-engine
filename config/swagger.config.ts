@@ -110,6 +110,16 @@ const options: swaggerJsdoc.Options = {
                     },
                 },
             },
+            "/container/stats/overview": {
+                get: {
+                    tags: ["Containers"],
+                    summary: "Fleet-wide CPU & memory usage",
+                    description: "Aggregate CPU and memory utilization across all running containers, plus a per-container breakdown, for the Overview dashboard.",
+                    responses: {
+                        "200": { description: "Fleet resource usage retrieved" },
+                    },
+                },
+            },
             "/container/{identifier}": {
                 get: {
                     tags: ["Containers"],

@@ -3,8 +3,118 @@
         <!-- Main Views Container -->
         <main class="main-content">
             
+            <!-- VIEW 0: OVERVIEW DASHBOARD -->
+            <section id="viewOverview" class="view-panel active">
+                <div class="stats-grid" id="overviewStatsGrid">
+                    <div class="stat-card">
+                        <div class="stat-icon purple">
+                            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="2" width="20" height="8" rx="2"/><rect x="2" y="14" width="20" height="8" rx="2"/></svg>
+                        </div>
+                        <div class="stat-info">
+                            <span class="stat-label">Running Containers</span>
+                            <h2 class="stat-value" id="ovRunningCount">0 <span style="font-size:14px;color:var(--text-dim);font-weight:600;">/ 0</span></h2>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon cyan">
+                            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="4" width="16" height="16" rx="2"/><rect x="9" y="9" width="6" height="6"/><path d="M9 2v2M15 2v2M9 20v2M15 20v2M2 9h2M2 15h2M20 9h2M20 15h2"/></svg>
+                        </div>
+                        <div class="stat-info">
+                            <span class="stat-label">Avg CPU Usage</span>
+                            <h2 class="stat-value" id="ovCpuPercent">0%</h2>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon emerald">
+                            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 19V5a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v14"/><path d="M2 19h20"/><path d="M9 3v4M15 3v4"/></svg>
+                        </div>
+                        <div class="stat-info">
+                            <span class="stat-label">Memory Usage</span>
+                            <h2 class="stat-value" id="ovMemUsage">0 MB</h2>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon amber">
+                            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="22" y1="12" x2="2" y2="12"/><path d="M5.45 5.11L2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/></svg>
+                        </div>
+                        <div class="stat-info">
+                            <span class="stat-label">Cached Images</span>
+                            <h2 class="stat-value" id="ovImagesCount">0</h2>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="section-header">
+                    <div>
+                        <h2>Resource Usage</h2>
+                        <p class="subtitle">Live CPU and memory consumption across the fleet</p>
+                    </div>
+                    <button class="btn btn-secondary" id="refreshOverviewBtn">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 4v6h-6"/><path d="M1 20v-6h6"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+                        <span>Refresh</span>
+                    </button>
+                </div>
+
+                <div class="overview-charts-grid">
+                    <div class="chart-card">
+                        <h3>CPU Utilization</h3>
+                        <p class="subtitle">Average across all running containers</p>
+                        <div class="gauge-wrap">
+                            <svg class="gauge-svg" viewBox="0 0 140 140">
+                                <circle class="gauge-track" cx="70" cy="70" r="58"></circle>
+                                <circle class="gauge-value" id="cpuGaugeArc" cx="70" cy="70" r="58"></circle>
+                            </svg>
+                            <div class="gauge-center">
+                                <span class="gauge-num" id="cpuGaugeText">0%</span>
+                                <span class="gauge-lbl">avg / core</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="chart-card">
+                        <h3>Memory Utilization</h3>
+                        <p class="subtitle" id="memSubtitle">0 MB of 0 GB allocated</p>
+                        <div class="mem-bar-track"><div class="mem-bar-fill" id="memBarFill" style="width:0%"></div></div>
+
+                        <div class="resource-bar-list" id="topContainersList">
+                            <p class="subtitle" style="text-align:center;padding:12px 0;">No running containers to measure.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="section-header">
+                    <div>
+                        <h2>Recent Containers</h2>
+                        <p class="subtitle">Latest deployed containers on the engine</p>
+                    </div>
+                    <button class="btn btn-secondary btn-sm" id="viewAllContainersBtn">
+                        <span>View All Containers</span>
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+                    </button>
+                </div>
+
+                <div class="container-grid" id="recentContainersGrid">
+                    <!-- Latest 3 containers rendered dynamically -->
+                </div>
+
+                <div class="section-header">
+                    <div>
+                        <h2>Recent Images</h2>
+                        <p class="subtitle">Latest cached image layers on the host</p>
+                    </div>
+                    <button class="btn btn-secondary btn-sm" id="viewAllImagesBtn">
+                        <span>View All Images</span>
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+                    </button>
+                </div>
+
+                <div class="container-grid" id="recentImagesGrid">
+                    <!-- Latest 3 images rendered dynamically -->
+                </div>
+            </section>
+
             <!-- VIEW 1: CONTAINERS DASHBOARD -->
-            <section id="viewContainers" class="view-panel active">
+            <section id="viewContainers" class="view-panel hidden">
                 <div class="stats-grid">
                     <div class="stat-card">
                         <div class="stat-icon purple">

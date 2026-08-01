@@ -27,3 +27,22 @@ export interface ContainerSummaryDto {
 }
 
 export type ContainerPowerAction = "start" | "stop" | "pause" | "unpause";
+
+export interface ContainerResourceUsage {
+    id: string;
+    name: string;
+    cpuPercent: number;
+    memoryUsageBytes: number;
+    memoryLimitBytes: number;
+    memoryPercent: number;
+}
+
+export interface FleetStatsDto {
+    totalContainers: number;
+    runningContainers: number;
+    avgCpuPercent: number;
+    totalMemoryUsageBytes: number;
+    totalMemoryLimitBytes: number;
+    totalMemoryPercent: number;
+    perContainer: ContainerResourceUsage[];
+}

@@ -15,11 +15,39 @@ document.addEventListener('DOMContentLoaded', () => {
     // Stats
     const statRunningCount = document.getElementById('statRunningCount');
 
+    // Overview Dashboard Elements
+    const ovRunningCount = document.getElementById('ovRunningCount');
+    const ovCpuPercent = document.getElementById('ovCpuPercent');
+    const ovMemUsage = document.getElementById('ovMemUsage');
+    const ovImagesCount = document.getElementById('ovImagesCount');
+    const cpuGaugeArc = document.getElementById('cpuGaugeArc');
+    const cpuGaugeText = document.getElementById('cpuGaugeText');
+    const memBarFill = document.getElementById('memBarFill');
+    const memSubtitle = document.getElementById('memSubtitle');
+    const topContainersList = document.getElementById('topContainersList');
+    const recentContainersGrid = document.getElementById('recentContainersGrid');
+    const recentImagesGrid = document.getElementById('recentImagesGrid');
+    const refreshOverviewBtn = document.getElementById('refreshOverviewBtn');
+    const viewAllContainersBtn = document.getElementById('viewAllContainersBtn');
+    const viewAllImagesBtn = document.getElementById('viewAllImagesBtn');
+    const GAUGE_CIRCUMFERENCE = 364.4;
+    let overviewRefreshTimer = null;
+
     // Deploy Modal
     const deployModal = document.getElementById('deployModal');
     const openDeployModalBtn = document.getElementById('openDeployModalBtn');
     const closeModalBtn = document.getElementById('closeModalBtn');
     const cancelModalBtn = document.getElementById('cancelModalBtn');
+    const presetsGrid = document.getElementById('presetsGrid');
+
+    // Save Custom Preset Modal
+    const savePresetModal = document.getElementById('savePresetModal');
+    const openSavePresetBtn = document.getElementById('openSavePresetBtn');
+    const closeSavePresetModalBtn = document.getElementById('closeSavePresetModalBtn');
+    const cancelSavePresetBtn = document.getElementById('cancelSavePresetBtn');
+    const confirmSavePresetBtn = document.getElementById('confirmSavePresetBtn');
+    const presetNameInput = document.getElementById('presetNameInput');
+    const presetSummaryText = document.getElementById('presetSummaryText');
 
     // Mobile Sidebar Drawer Elements
     const toggleMobileSidebarBtn = document.getElementById('toggleMobileSidebarBtn');
@@ -189,42 +217,56 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // Unified Navigation Tab Switcher (Desktop & Mobile Drawer)
-    navTabs.forEach(tab => {
-        tab.addEventListener('click', () => {
-            const targetViewId = tab.dataset.view;
-
-            // Synchronize active state across both desktop tabs and mobile sidebar tabs
-            navTabs.forEach(t => {
-                if (t.dataset.view === targetViewId) {
-                    t.classList.add('active');
-                } else {
-                    t.classList.remove('active');
-                }
-            });
-
-            viewPanels.forEach(p => p.classList.add('hidden'));
-            viewPanels.forEach(p => p.classList.remove('active'));
-
-            const targetView = document.getElementById(targetViewId);
-            if (targetView) {
-                targetView.classList.remove('hidden');
-                targetView.classList.add('active');
+    function switchToView(targetViewId) {
+        // Synchronize active state across both desktop tabs and mobile sidebar tabs
+        navTabs.forEach(t => {
+            if (t.dataset.view === targetViewId) {
+                t.classList.add('active');
+            } else {
+                t.classList.remove('active');
             }
-
-            // Close mobile sidebar on tab selection
-            if (mobileSidebarBackdrop) mobileSidebarBackdrop.classList.remove('active');
-
-            if (targetViewId === 'viewContainers') fetchContainers();
-            if (targetViewId === 'viewImages') fetchImages();
-            if (targetViewId === 'viewNetworks') fetchNetworks();
-            if (targetViewId === 'viewVolumes') fetchVolumes();
-            if (targetViewId === 'viewMetrics') fetchMetrics();
         });
+
+        viewPanels.forEach(p => p.classList.add('hidden'));
+        viewPanels.forEach(p => p.classList.remove('active'));
+
+        const targetView = document.getElementById(targetViewId);
+        if (targetView) {
+            targetView.classList.remove('hidden');
+            targetView.classList.add('active');
+        }
+
+        // Close mobile sidebar on tab selection
+        if (mobileSidebarBackdrop) mobileSidebarBackdrop.classList.remove('active');
+
+        // Live overview stats only auto-refresh while that tab is visible
+        if (overviewRefreshTimer) {
+            clearInterval(overviewRefreshTimer);
+            overviewRefreshTimer = null;
+        }
+
+        if (targetViewId === 'viewOverview') {
+            fetchOverview();
+            overviewRefreshTimer = setInterval(fetchOverview, 5000);
+        }
+        if (targetViewId === 'viewContainers') fetchContainers();
+        if (targetViewId === 'viewImages') fetchImages();
+        if (targetViewId === 'viewNetworks') fetchNetworks();
+        if (targetViewId === 'viewVolumes') fetchVolumes();
+    }
+
+    navTabs.forEach(tab => {
+        tab.addEventListener('click', () => switchToView(tab.dataset.view));
     });
 
-    // 2. Initial Data Fetch
-    fetchContainers();
+    if (viewAllContainersBtn) viewAllContainersBtn.addEventListener('click', () => switchToView('viewContainers'));
+    if (viewAllImagesBtn) viewAllImagesBtn.addEventListener('click', () => switchToView('viewImages'));
 
+    // 2. Initial Data Fetch — Overview is the default landing tab
+    fetchOverview();
+    overviewRefreshTimer = setInterval(fetchOverview, 5000);
+
+    if (refreshOverviewBtn) refreshOverviewBtn.addEventListener('click', fetchOverview);
     if (refreshContainersBtn) refreshContainersBtn.addEventListener('click', fetchContainers);
     if (refreshImagesBtn) refreshImagesBtn.addEventListener('click', fetchImages);
     if (refreshNetworksBtn) refreshNetworksBtn.addEventListener('click', fetchNetworks);
@@ -314,7 +356,7 @@ document.addEventListener('DOMContentLoaded', () => {
         pendingDeleteVolumeTarget = null;
     });
 
-    // 3. Interactive Quick Presets Handler
+    // 3. Interactive Quick Presets Handler (built-in presets)
     document.querySelectorAll('.preset-card').forEach(card => {
         card.addEventListener('click', (e) => {
             e.preventDefault();
@@ -339,6 +381,145 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
     });
+
+    // 3b. Custom "Save Preset" — persists the current form values as a reusable preset in localStorage
+    const CUSTOM_PRESETS_KEY = 'nexadock_custom_presets';
+    const PRESET_ICON_COLORS = ['cyan', 'purple', 'emerald', 'rose', 'amber'];
+    const SVG_BOOKMARK = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>`;
+
+    function loadCustomPresets() {
+        try {
+            const raw = localStorage.getItem(CUSTOM_PRESETS_KEY);
+            const parsed = raw ? JSON.parse(raw) : [];
+            return Array.isArray(parsed) ? parsed : [];
+        } catch {
+            return [];
+        }
+    }
+
+    function persistCustomPresets() {
+        localStorage.setItem(CUSTOM_PRESETS_KEY, JSON.stringify(customPresets));
+    }
+
+    function escapeHtml(str) {
+        return String(str).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+    }
+
+    let customPresets = loadCustomPresets();
+
+    function renderCustomPresets() {
+        if (!presetsGrid) return;
+        presetsGrid.querySelectorAll('.preset-card.custom').forEach(el => el.remove());
+
+        customPresets.forEach((p, i) => {
+            const color = PRESET_ICON_COLORS[i % PRESET_ICON_COLORS.length];
+            const card = document.createElement('button');
+            card.type = 'button';
+            card.className = 'preset-card custom';
+            card.dataset.presetId = p.id;
+            card.innerHTML = `
+                <div class="preset-icon ${color}">${SVG_BOOKMARK}</div>
+                <div class="preset-text">
+                    <strong>${escapeHtml(p.presetName)}<span class="preset-custom-badge">Custom</span></strong>
+                    <span>${escapeHtml(p.image)}${p.port ? ' :' + escapeHtml(p.port) : ''}</span>
+                </div>
+                <button type="button" class="preset-remove-btn" data-remove-id="${p.id}" title="Remove preset">&times;</button>
+            `;
+            presetsGrid.appendChild(card);
+
+            card.addEventListener('click', (e) => {
+                if (e.target.closest('.preset-remove-btn')) return;
+
+                document.querySelectorAll('.preset-card').forEach(c => c.classList.remove('active'));
+                card.classList.add('active');
+
+                document.getElementById('inputImage').value = p.image;
+                document.getElementById('inputTag').value = p.tag || 'latest';
+                document.getElementById('inputName').value = p.containerName || '';
+                document.getElementById('inputPort').value = p.port || '';
+
+                if (hubSearchDropdown) hubSearchDropdown.classList.add('hidden');
+
+                envList.innerHTML = '';
+                (p.env || []).forEach(pair => addEnvRow(pair.key, pair.value));
+
+                showToast(`Applied custom preset "${p.presetName}"`, 'info');
+            });
+
+            card.querySelector('.preset-remove-btn').addEventListener('click', (e) => {
+                e.stopPropagation();
+                customPresets = customPresets.filter(item => item.id !== p.id);
+                persistCustomPresets();
+                renderCustomPresets();
+                showToast('Preset removed', 'info');
+            });
+        });
+    }
+
+    renderCustomPresets();
+
+    if (openSavePresetBtn) {
+        openSavePresetBtn.addEventListener('click', () => {
+            const image = document.getElementById('inputImage').value.trim();
+            if (!image) {
+                showToast('Enter an image name before saving a preset', 'error');
+                return;
+            }
+
+            const tag = document.getElementById('inputTag').value.trim() || 'latest';
+            const port = document.getElementById('inputPort').value.trim();
+
+            presetSummaryText.textContent = `${image}:${tag}${port ? ' · port ' + port : ''}`;
+            presetNameInput.value = '';
+            savePresetModal.classList.add('active');
+            presetNameInput.focus();
+        });
+    }
+
+    [closeSavePresetModalBtn, cancelSavePresetBtn].forEach(b => {
+        if (b) b.addEventListener('click', () => savePresetModal.classList.remove('active'));
+    });
+
+    if (confirmSavePresetBtn) {
+        confirmSavePresetBtn.addEventListener('click', () => {
+            const presetName = presetNameInput.value.trim();
+            if (!presetName) {
+                showToast('Enter a name for this preset', 'error');
+                return;
+            }
+
+            const image = document.getElementById('inputImage').value.trim();
+            if (!image) {
+                showToast('Enter an image name before saving a preset', 'error');
+                return;
+            }
+
+            const tag = document.getElementById('inputTag').value.trim() || 'latest';
+            const containerName = document.getElementById('inputName').value.trim();
+            const port = document.getElementById('inputPort').value.trim();
+
+            const env = [];
+            document.querySelectorAll('.env-row').forEach(row => {
+                const k = row.querySelector('.env-key').value.trim();
+                const v = row.querySelector('.env-val').value.trim();
+                if (k) env.push({ key: k, value: v });
+            });
+
+            customPresets.push({
+                id: `custom_${Date.now()}`,
+                presetName,
+                image,
+                tag,
+                containerName,
+                port,
+                env,
+            });
+            persistCustomPresets();
+            renderCustomPresets();
+            savePresetModal.classList.remove('active');
+            showToast(`Saved preset "${presetName}"`, 'success');
+        });
+    }
 
     // 4. Docker Hub Auto-Complete Real-Time Search
     if (inputImage) {
@@ -488,6 +669,85 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
+    const SVG_START = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polygon points="5 3 19 12 5 21 5 3"/></svg>`;
+    const SVG_STOP = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><rect x="6" y="6" width="12" height="12" rx="2"/></svg>`;
+    const SVG_PAUSE = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>`;
+    const SVG_INSPECT = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>`;
+    const SVG_DELETE = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>`;
+
+    // Builds the container card markup — shared by the full Containers grid and the Overview "Recent Containers" preview
+    function containerCardHTML(c) {
+        const isRunning = c.state === 'running';
+        const isPaused = c.state === 'paused';
+        let badgeClass = 'stopped';
+        let badgeText = 'Stopped';
+
+        if (isRunning) { badgeClass = 'running'; badgeText = 'Running'; }
+        if (isPaused) { badgeClass = 'paused'; badgeText = 'Paused'; }
+
+        return `
+            <div class="card">
+                <div class="card-header">
+                    <div class="container-title-group">
+                        <h3 class="copy-badge" data-copy="${c.name}" title="Click to copy container name"><span class="copy-badge-text">${c.name}</span> ${SVG_COPY_ICON}</h3>
+                        <div><span class="copy-badge" data-copy="${c.image}" title="Click to copy image"><span class="copy-badge-text">${c.image}</span> ${SVG_COPY_ICON}</span></div>
+                    </div>
+                    <span class="badge ${badgeClass}">${badgeText}</span>
+                </div>
+
+                <div class="card-details">
+                    <div class="detail-row">
+                        <span>Internal IP:</span>
+                        <span class="copy-badge" data-copy="${c.internalIp || '172.18.0.x'}" title="Click to copy IP"><span class="copy-badge-text">${c.internalIp || '172.18.0.x'}</span> ${SVG_COPY_ICON}</span>
+                    </div>
+                    <div class="detail-row"><span>Status:</span> <span>${c.status}</span></div>
+                </div>
+
+                <div style="display:flex; align-items:center; gap:6px; margin-bottom:18px;">
+                    <a href="${c.url}" target="_blank" class="url-link-box" style="flex:1; margin-bottom:0; overflow:hidden;">
+                        <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${c.url}</span>
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="flex-shrink:0;"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+                    </a>
+                    <button type="button" class="btn btn-secondary btn-sm copy-badge" data-copy="${c.url}" title="Copy URL" style="padding:9px 10px;flex-shrink:0;">${SVG_COPY_ICON}</button>
+                </div>
+
+                <div class="card-action-strip">
+                    <div class="action-btn-group">
+                        ${isRunning
+                            ? `<button class="btn btn-stop btn-sm power-btn" data-id="${c.name}" data-action="stop">${SVG_STOP} Stop</button>
+                               <button class="btn btn-pause btn-sm power-btn" data-id="${c.name}" data-action="pause">${SVG_PAUSE} Pause</button>`
+                            : isPaused
+                            ? `<button class="btn btn-start btn-sm power-btn" data-id="${c.name}" data-action="unpause">${SVG_START} Resume</button>
+                               <button class="btn btn-stop btn-sm power-btn" data-id="${c.name}" data-action="stop">${SVG_STOP} Stop</button>`
+                            : `<button class="btn btn-start btn-sm power-btn" data-id="${c.name}" data-action="start">${SVG_START} Start</button>`
+                        }
+                        <button class="btn btn-inspect btn-sm inspect-btn" data-id="${c.name}">${SVG_INSPECT} Inspect</button>
+                    </div>
+                    <button class="btn btn-danger btn-sm open-delete-modal-btn" data-name="${c.name}">${SVG_DELETE} Delete</button>
+                </div>
+            </div>
+        `;
+    }
+
+    // Wires up power/inspect/delete buttons for any container cards rendered into `root`
+    function attachContainerCardEvents(root) {
+        root.querySelectorAll('.power-btn').forEach(btn => {
+            btn.addEventListener('click', () => handlePowerAction(btn, btn.dataset.id, btn.dataset.action));
+        });
+
+        root.querySelectorAll('.inspect-btn').forEach(btn => {
+            btn.addEventListener('click', () => inspectContainer(btn.dataset.id));
+        });
+
+        root.querySelectorAll('.open-delete-modal-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                pendingDeleteIdentifier = btn.dataset.name;
+                deleteTargetName.textContent = pendingDeleteIdentifier;
+                deleteConfirmModal.classList.add('active');
+            });
+        });
+    }
+
     function renderContainers(containers) {
         const running = containers.filter(c => c.state === 'running');
         statRunningCount.textContent = running.length;
@@ -497,80 +757,109 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
 
-        const SVG_START = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polygon points="5 3 19 12 5 21 5 3"/></svg>`;
-        const SVG_STOP = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><rect x="6" y="6" width="12" height="12" rx="2"/></svg>`;
-        const SVG_PAUSE = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>`;
-        const SVG_INSPECT = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>`;
-        const SVG_DELETE = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>`;
+        containerGrid.innerHTML = containers.map(containerCardHTML).join('');
+        attachContainerCardEvents(containerGrid);
+    }
 
-        containerGrid.innerHTML = containers.map(c => {
-            const isRunning = c.state === 'running';
-            const isPaused = c.state === 'paused';
-            let badgeClass = 'stopped';
-            let badgeText = 'Stopped';
+    // Format raw byte counts into human-readable MB/GB
+    function formatBytes(bytes) {
+        if (!bytes || bytes <= 0) return '0 MB';
+        const gb = bytes / (1024 ** 3);
+        if (gb >= 1) return `${gb.toFixed(1)} GB`;
+        return `${(bytes / (1024 ** 2)).toFixed(0)} MB`;
+    }
 
-            if (isRunning) { badgeClass = 'running'; badgeText = 'Running'; }
-            if (isPaused) { badgeClass = 'paused'; badgeText = 'Paused'; }
-
-            return `
-                <div class="card">
-                    <div class="card-header">
-                        <div class="container-title-group">
-                            <h3 class="copy-badge" data-copy="${c.name}" title="Click to copy container name"><span class="copy-badge-text">${c.name}</span> ${SVG_COPY_ICON}</h3>
-                            <div><span class="copy-badge" data-copy="${c.image}" title="Click to copy image"><span class="copy-badge-text">${c.image}</span> ${SVG_COPY_ICON}</span></div>
-                        </div>
-                        <span class="badge ${badgeClass}">${badgeText}</span>
-                    </div>
-
-                    <div class="card-details">
-                        <div class="detail-row">
-                            <span>Internal IP:</span>
-                            <span class="copy-badge" data-copy="${c.internalIp || '172.18.0.x'}" title="Click to copy IP"><span class="copy-badge-text">${c.internalIp || '172.18.0.x'}</span> ${SVG_COPY_ICON}</span>
-                        </div>
-                        <div class="detail-row"><span>Status:</span> <span>${c.status}</span></div>
-                    </div>
-
-                    <div style="display:flex; align-items:center; gap:6px; margin-bottom:18px;">
-                        <a href="${c.url}" target="_blank" class="url-link-box" style="flex:1; margin-bottom:0; overflow:hidden;">
-                            <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${c.url}</span>
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="flex-shrink:0;"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
-                        </a>
-                        <button type="button" class="btn btn-secondary btn-sm copy-badge" data-copy="${c.url}" title="Copy URL" style="padding:9px 10px;flex-shrink:0;">${SVG_COPY_ICON}</button>
-                    </div>
-
-                    <div class="card-action-strip">
-                        <div class="action-btn-group">
-                            ${isRunning 
-                                ? `<button class="btn btn-stop btn-sm power-btn" data-id="${c.name}" data-action="stop">${SVG_STOP} Stop</button>
-                                   <button class="btn btn-pause btn-sm power-btn" data-id="${c.name}" data-action="pause">${SVG_PAUSE} Pause</button>`
-                                : isPaused
-                                ? `<button class="btn btn-start btn-sm power-btn" data-id="${c.name}" data-action="unpause">${SVG_START} Resume</button>
-                                   <button class="btn btn-stop btn-sm power-btn" data-id="${c.name}" data-action="stop">${SVG_STOP} Stop</button>`
-                                : `<button class="btn btn-start btn-sm power-btn" data-id="${c.name}" data-action="start">${SVG_START} Start</button>`
-                            }
-                            <button class="btn btn-inspect btn-sm inspect-btn" data-id="${c.name}">${SVG_INSPECT} Inspect</button>
-                        </div>
-                        <button class="btn btn-danger btn-sm open-delete-modal-btn" data-name="${c.name}">${SVG_DELETE} Delete</button>
-                    </div>
+    // Builds a compact preview card for the Overview "Recent Images" section
+    function imageMiniCardHTML(img) {
+        const tag = img.repoTags[0] || img.id;
+        return `
+            <div class="mini-card">
+                <div class="mini-card-header">
+                    <h4 class="copy-badge-text" title="${tag}" style="max-width:100%;">${tag}</h4>
+                    <button class="btn btn-inspect btn-sm inspect-image-btn" data-target="${tag}" title="Inspect image">${SVG_INSPECT}</button>
                 </div>
-            `;
-        }).join('');
+                <div class="mini-card-meta">
+                    <span>${img.sizeMb}</span>
+                    <span>${new Date(img.created * 1000).toLocaleDateString()}</span>
+                </div>
+            </div>
+        `;
+    }
 
-        document.querySelectorAll('.power-btn').forEach(btn => {
-            btn.addEventListener('click', () => handlePowerAction(btn, btn.dataset.id, btn.dataset.action));
-        });
+    // Fetch & Render the Overview Dashboard (KPI cards, CPU/memory charts, recent containers/images)
+    async function fetchOverview() {
+        try {
+            const [containersRes, statsRes, imagesRes] = await Promise.all([
+                fetch('/container'),
+                fetch('/container/stats/overview'),
+                fetch('/image'),
+            ]);
 
-        document.querySelectorAll('.inspect-btn').forEach(btn => {
-            btn.addEventListener('click', () => inspectContainer(btn.dataset.id));
-        });
+            const containersData = await containersRes.json();
+            const statsData = await statsRes.json();
+            const imagesData = await imagesRes.json();
 
-        document.querySelectorAll('.open-delete-modal-btn').forEach(btn => {
-            btn.addEventListener('click', () => {
-                pendingDeleteIdentifier = btn.dataset.name;
-                deleteTargetName.textContent = pendingDeleteIdentifier;
-                deleteConfirmModal.classList.add('active');
+            if (!containersRes.ok) throw new Error(containersData.message);
+            if (!statsRes.ok) throw new Error(statsData.message);
+            if (!imagesRes.ok) throw new Error(imagesData.message);
+
+            const containers = containersData.data || [];
+            const stats = statsData.data || {};
+            const images = imagesData.data || [];
+
+            // KPI cards
+            ovRunningCount.innerHTML = `${stats.runningContainers || 0} <span style="font-size:14px;color:var(--text-dim);font-weight:600;">/ ${stats.totalContainers || 0}</span>`;
+            ovCpuPercent.textContent = `${(stats.avgCpuPercent || 0).toFixed(1)}%`;
+            ovMemUsage.textContent = formatBytes(stats.totalMemoryUsageBytes);
+            ovImagesCount.textContent = images.length;
+
+            // CPU gauge
+            const cpuPct = Math.min(stats.avgCpuPercent || 0, 100);
+            cpuGaugeArc.style.strokeDashoffset = GAUGE_CIRCUMFERENCE * (1 - cpuPct / 100);
+            cpuGaugeArc.style.stroke = cpuPct > 85 ? 'var(--rose)' : cpuPct > 60 ? 'var(--amber)' : 'var(--cyan)';
+            cpuGaugeText.textContent = `${cpuPct.toFixed(1)}%`;
+
+            // Memory bar
+            const memPct = Math.min(stats.totalMemoryPercent || 0, 100);
+            memBarFill.style.width = `${memPct}%`;
+            memBarFill.classList.toggle('warn', memPct > 60 && memPct <= 85);
+            memBarFill.classList.toggle('danger', memPct > 85);
+            memSubtitle.textContent = `${formatBytes(stats.totalMemoryUsageBytes)} of ${formatBytes(stats.totalMemoryLimitBytes)} allocated`;
+
+            // Top containers by resource usage
+            const perContainer = (stats.perContainer || []).slice(0, 5);
+            if (perContainer.length === 0) {
+                topContainersList.innerHTML = `<p class="subtitle" style="text-align:center;padding:12px 0;">No running containers to measure.</p>`;
+            } else {
+                const maxCpu = Math.max(...perContainer.map(s => s.cpuPercent), 1);
+                topContainersList.innerHTML = perContainer.map(s => `
+                    <div class="resource-bar-row">
+                        <span class="resource-bar-name" title="${s.name}">${s.name}</span>
+                        <div class="resource-bar-track"><div class="resource-bar-fill" style="width:${Math.max((s.cpuPercent / maxCpu) * 100, 2)}%"></div></div>
+                        <span class="resource-bar-value">${s.cpuPercent.toFixed(1)}%</span>
+                    </div>
+                `).join('');
+            }
+
+            // Recent containers (latest 3, by creation time)
+            const recentContainers = [...containers].sort((a, b) => (b.created || 0) - (a.created || 0)).slice(0, 3);
+            recentContainersGrid.innerHTML = recentContainers.length
+                ? recentContainers.map(containerCardHTML).join('')
+                : `<div class="empty-state"><p>No containers deployed yet.</p></div>`;
+            attachContainerCardEvents(recentContainersGrid);
+
+            // Recent images (latest 3, by creation time)
+            const recentImages = [...images].sort((a, b) => (b.created || 0) - (a.created || 0)).slice(0, 3);
+            recentImagesGrid.innerHTML = recentImages.length
+                ? recentImages.map(imageMiniCardHTML).join('')
+                : `<div class="empty-state"><p>No local images cached yet.</p></div>`;
+
+            recentImagesGrid.querySelectorAll('.inspect-image-btn').forEach(btn => {
+                btn.addEventListener('click', () => inspectImageDetails(btn.dataset.target));
             });
-        });
+        } catch (err) {
+            showToast(`Overview: ${err.message}`, 'error');
+        }
     }
 
     // Power Action Handler

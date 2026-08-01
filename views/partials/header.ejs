@@ -31,7 +31,11 @@
 
             <!-- Desktop Multi-Tab Switcher -->
             <nav class="nav-tabs desktop-only">
-                <button class="nav-tab active" data-view="viewContainers">
+                <button class="nav-tab active" data-view="viewOverview">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg>
+                    <span>Overview</span>
+                </button>
+                <button class="nav-tab" data-view="viewContainers">
                     <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="2" width="20" height="8" rx="2"/><rect x="2" y="14" width="20" height="8" rx="2"/></svg>
                     <span>Containers</span>
                 </button>
@@ -59,10 +63,6 @@
 
             <!-- Desktop Actions Group -->
             <div class="actions-group desktop-only">
-                <a href="/api-docs" target="_blank" class="btn btn-secondary btn-sm" title="Interactive OpenAPI Swagger UI Specs">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
-                    <span>API Specs</span>
-                </a>
                 <button class="btn btn-primary btn-sm" id="openDeployModalBtn">
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
                     <span>Deploy Container</span>
@@ -101,7 +101,11 @@
                 </div>
 
                 <nav class="sidebar-nav">
-                    <button class="sidebar-nav-tab nav-tab active" data-view="viewContainers">
+                    <button class="sidebar-nav-tab nav-tab active" data-view="viewOverview">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg>
+                        <span>Overview</span>
+                    </button>
+                    <button class="sidebar-nav-tab nav-tab" data-view="viewContainers">
                         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="2" width="20" height="8" rx="2"/><rect x="2" y="14" width="20" height="8" rx="2"/></svg>
                         <span>Containers</span>
                     </button>
@@ -128,11 +132,7 @@
                 </nav>
 
                 <div class="sidebar-footer">
-                    <a href="/api-docs" target="_blank" class="btn btn-secondary w-full" style="width:100%;">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
-                        <span>API Specs (Swagger UI)</span>
-                    </a>
-                    <button class="btn btn-primary w-full" id="sidebarDeployBtn" style="width:100%; margin-top:10px;">
+                    <button class="btn btn-primary w-full" id="sidebarDeployBtn" style="width:100%;">
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
                         <span>Deploy Container</span>
                     </button>

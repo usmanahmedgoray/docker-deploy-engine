@@ -4,6 +4,7 @@ import {
     deleteContainerByIdOrName as deleteContainerByIdOrNameService,
     deleteContainersByImage as deleteContainersByImageService,
     getContainerByIdOrName as getContainerByIdOrNameService,
+    getFleetStats as getFleetStatsService,
     listContainers as listContainersService,
     containerPowerAction as containerPowerActionService,
 } from "../services/container.service";
@@ -31,6 +32,15 @@ export const listContainers = async (req: Request, res: Response) => {
         res.status(200).json({ message: "Containers list retrieved successfully", data });
     } catch (error: any) {
         res.status(500).json({ message: "Failed to list containers", error: error.message });
+    }
+};
+
+export const getFleetStats = async (req: Request, res: Response) => {
+    try {
+        const data = await getFleetStatsService();
+        res.status(200).json({ message: "Fleet resource usage retrieved successfully", data });
+    } catch (error: any) {
+        res.status(500).json({ message: "Failed to retrieve fleet resource usage", error: error.message });
     }
 };
 

@@ -242,6 +242,61 @@ export const deleteContainerByIdOrName = async (identifier: string, force: boole
     };
 };
 
+export const getFleetStats = async () => {
+    const containers = await docker.listContainers({ all: true });
+    const running = containers.filter((c) => c.State === "running");
+
+    const perContainer = (
+        await Promise.all(
+            running.map(async (c) => {
+                try {
+                    const stats: any = await docker.getContainer(c.Id).stats({ stream: false });
+                    const rawName = c.Names?.[0] || c.Id.substring(0, 12);
+                    const cleanName = rawName.startsWith("/") ? rawName.substring(1) : rawName;
+
+                    const cpuDelta = stats.cpu_stats.cpu_usage.total_usage - stats.precpu_stats.cpu_usage.total_usage;
+                    const systemDelta = stats.cpu_stats.system_cpu_usage - stats.precpu_stats.system_cpu_usage;
+                    const onlineCpus = stats.cpu_stats.online_cpus || stats.cpu_stats.cpu_usage.percpu_usage?.length || 1;
+                    const cpuPercent = systemDelta > 0 && cpuDelta > 0 ? (cpuDelta / systemDelta) * onlineCpus * 100 : 0;
+
+                    const memUsage = stats.memory_stats.usage || 0;
+                    const memCache = stats.memory_stats.stats?.cache || 0;
+                    const memActual = Math.max(memUsage - memCache, 0);
+                    const memLimit = stats.memory_stats.limit || 0;
+                    const memPercent = memLimit > 0 ? (memActual / memLimit) * 100 : 0;
+
+                    return {
+                        id: c.Id,
+                        name: cleanName,
+                        cpuPercent: Number(cpuPercent.toFixed(2)),
+                        memoryUsageBytes: memActual,
+                        memoryLimitBytes: memLimit,
+                        memoryPercent: Number(memPercent.toFixed(2)),
+                    };
+                } catch {
+                    return null;
+                }
+            })
+        )
+    ).filter((s): s is NonNullable<typeof s> => s !== null);
+
+    const totalMemoryUsageBytes = perContainer.reduce((sum, s) => sum + s.memoryUsageBytes, 0);
+    const totalMemoryLimitBytes = perContainer.reduce((max, s) => Math.max(max, s.memoryLimitBytes), 0);
+    const avgCpuPercent = perContainer.length
+        ? perContainer.reduce((sum, s) => sum + s.cpuPercent, 0) / perContainer.length
+        : 0;
+
+    return {
+        totalContainers: containers.length,
+        runningContainers: running.length,
+        avgCpuPercent: Number(avgCpuPercent.toFixed(2)),
+        totalMemoryUsageBytes,
+        totalMemoryLimitBytes,
+        totalMemoryPercent: totalMemoryLimitBytes > 0 ? Number(((totalMemoryUsageBytes / totalMemoryLimitBytes) * 100).toFixed(2)) : 0,
+        perContainer: perContainer.sort((a, b) => b.cpuPercent - a.cpuPercent),
+    };
+};
+
 export const deleteContainersByImage = async (image: string, tag: string = "latest", force: boolean = true) => {
     if (!image) {
         throw new Error("Image parameter is required");

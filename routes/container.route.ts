@@ -5,6 +5,7 @@ import {
     deleteContainerByIdOrName,
     deleteContainersByImage,
     getContainerByIdOrName,
+    getFleetStats,
     listContainers,
 } from "../controller/container.controller";
 
@@ -15,6 +16,10 @@ containerRoutes.get("/", listContainers);
 
 // Create container
 containerRoutes.post("/", createContainer);
+
+// Fleet-wide CPU/memory usage aggregate for the Overview dashboard (static route,
+// must be declared before the dynamic "/:identifier" routes below)
+containerRoutes.get("/stats/overview", getFleetStats);
 
 // Power actions: /container/web1/stop, /container/web1/start, /container/web1/pause, /container/web1/unpause
 containerRoutes.post("/:identifier/:action", containerPowerAction);

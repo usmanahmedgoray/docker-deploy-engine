@@ -114,6 +114,10 @@
                 </div>
 
                 <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" id="openSavePresetBtn" style="margin-right:auto;" title="Save the current image, tag, port, and env vars as a reusable preset">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>
+                        <span>Save as Preset</span>
+                    </button>
                     <button type="button" class="btn btn-secondary" id="cancelModalBtn">Cancel</button>
                     <button type="submit" class="btn btn-primary" id="submitDeployBtn">
                         <span class="btn-spinner hidden" id="deploySpinner"></span>
@@ -121,6 +125,33 @@
                     </button>
                 </div>
             </form>
+        </div>
+    </div>
+
+    <!-- Save Custom Preset Modal -->
+    <div class="modal-backdrop" id="savePresetModal">
+        <div class="modal-card small">
+            <div class="modal-header">
+                <div>
+                    <h3>Save as Preset</h3>
+                    <p class="modal-subtitle">Reuse this configuration from the presets grid next time</p>
+                </div>
+                <button class="close-btn" id="closeSavePresetModalBtn" title="Close Modal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label for="presetNameInput">Preset Name *</label>
+                    <input type="text" id="presetNameInput" placeholder="e.g. My API Stack" autocomplete="off" required>
+                </div>
+                <div class="config-item">
+                    <span>Will save:</span>
+                    <strong id="presetSummaryText">—</strong>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" id="cancelSavePresetBtn">Cancel</button>
+                <button type="button" class="btn btn-primary" id="confirmSavePresetBtn">Save Preset</button>
+            </div>
         </div>
     </div>
 
