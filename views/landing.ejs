@@ -1,0 +1,456 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>NexaDock — Enterprise Container Engine & Dynamic Subdomain Proxy</title>
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/style.css">
+    <style>
+        /* Landing Page Custom Styling */
+        .landing-navbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 16px 32px;
+            background: rgba(17, 21, 34, 0.88);
+            backdrop-filter: blur(24px);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-lg);
+            margin-bottom: 48px;
+            position: sticky;
+            top: 16px;
+            z-index: 1000;
+            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5), 0 0 20px rgba(99, 102, 241, 0.1);
+        }
+
+        .landing-nav-links {
+            display: flex;
+            align-items: center;
+            gap: 28px;
+        }
+
+        .landing-nav-links a {
+            color: var(--text-muted);
+            text-decoration: none;
+            font-size: 14px;
+            font-weight: 600;
+            transition: var(--transition);
+        }
+
+        .landing-nav-links a:hover {
+            color: #fff;
+        }
+
+        .hero-section {
+            text-align: center;
+            max-width: 960px;
+            margin: 0 auto 64px auto;
+            padding: 40px 20px 0 20px;
+        }
+
+        .hero-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 6px 18px;
+            border-radius: 30px;
+            background: rgba(99, 102, 241, 0.12);
+            border: 1px solid var(--border-highlight);
+            color: var(--primary);
+            font-size: 12.5px;
+            font-weight: 700;
+            letter-spacing: 0.6px;
+            margin-bottom: 24px;
+        }
+
+        .hero-title {
+            font-size: 54px;
+            font-weight: 900;
+            line-height: 1.15;
+            letter-spacing: -1.5px;
+            margin-bottom: 20px;
+            background: linear-gradient(135deg, #ffffff 30%, var(--cyan) 70%, var(--primary) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .hero-subtitle {
+            font-size: 18px;
+            color: var(--text-muted);
+            line-height: 1.6;
+            margin-bottom: 36px;
+            max-width: 780px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .hero-cta-group {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 16px;
+            flex-wrap: wrap;
+        }
+
+        .hero-cta-group .btn-lg {
+            padding: 14px 32px;
+            font-size: 15px;
+            border-radius: 12px;
+        }
+
+        /* Architectural Graphic Illustration */
+        .illustration-card {
+            background: #0b0f19;
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-lg);
+            box-shadow: 0 30px 80px rgba(0, 0, 0, 0.8), 0 0 40px var(--primary-glow);
+            max-width: 920px;
+            margin: 48px auto 80px auto;
+            padding: 32px;
+            text-align: center;
+        }
+
+        .illustration-title {
+            font-size: 14px;
+            font-weight: 700;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            color: var(--cyan);
+            margin-bottom: 20px;
+        }
+
+        .svg-architecture-diagram {
+            width: 100%;
+            height: auto;
+            max-height: 380px;
+        }
+
+        /* Features Grid */
+        .features-section {
+            margin-bottom: 96px;
+        }
+
+        .section-title-center {
+            text-align: center;
+            margin-bottom: 48px;
+        }
+
+        .section-title-center h2 {
+            font-size: 32px;
+            font-weight: 800;
+            letter-spacing: -0.8px;
+            margin-bottom: 12px;
+        }
+
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 24px;
+        }
+
+        .feature-card {
+            background: var(--bg-card);
+            backdrop-filter: blur(16px);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-md);
+            padding: 28px;
+            transition: var(--transition);
+        }
+
+        .feature-card:hover {
+            border-color: var(--border-highlight);
+            transform: translateY(-4px);
+            box-shadow: 0 16px 40px rgba(0, 0, 0, 0.5);
+        }
+
+        .feature-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 20px;
+        }
+
+        .feature-icon.cyan { background: rgba(6, 182, 212, 0.12); color: var(--cyan); }
+        .feature-icon.purple { background: rgba(99, 102, 241, 0.12); color: var(--primary); }
+        .feature-icon.emerald { background: rgba(16, 185, 129, 0.12); color: var(--emerald); }
+        .feature-icon.amber { background: rgba(245, 158, 11, 0.12); color: var(--amber); }
+
+        .feature-card h3 {
+            font-size: 18px;
+            font-weight: 700;
+            margin-bottom: 10px;
+            color: #fff;
+        }
+
+        .feature-card p {
+            font-size: 14px;
+            color: var(--text-muted);
+            line-height: 1.6;
+        }
+
+        /* Tech Banner */
+        .tech-banner {
+            background: linear-gradient(135deg, rgba(99, 102, 241, 0.1), rgba(6, 182, 212, 0.1));
+            border: 1px solid var(--border-highlight);
+            border-radius: var(--radius-lg);
+            padding: 48px 32px;
+            text-align: center;
+            margin-bottom: 80px;
+        }
+
+        .tech-badges {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 16px;
+            flex-wrap: wrap;
+            margin-top: 24px;
+        }
+
+        .tech-pill {
+            padding: 8px 18px;
+            background: rgba(12, 16, 26, 0.8);
+            border: 1px solid var(--border-color);
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text-main);
+        }
+
+        /* Footer */
+        .landing-footer {
+            border-top: 1px solid var(--border-color);
+            padding: 32px 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 16px;
+            color: var(--text-muted);
+            font-size: 13px;
+        }
+
+        @media screen and (max-width: 768px) {
+            .hero-title { font-size: 34px; }
+            .hero-subtitle { font-size: 15px; }
+            .landing-navbar { padding: 14px 18px; }
+            .landing-nav-links { display: none; }
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <!-- Landing Header -->
+        <header class="landing-navbar">
+            <a href="/" class="brand" style="text-decoration:none;">
+                <div class="logo-icon">
+                    <svg viewBox="0 0 64 64" width="28" height="28">
+                        <path d="M32 10 L50 20 V42 L32 52 L14 42 V20 Z" fill="none" stroke="#ffffff" stroke-width="3.5" stroke-linejoin="round" />
+                        <path d="M32 10 V32 L50 42" fill="none" stroke="#ffffff" stroke-width="3" stroke-linejoin="round" />
+                        <path d="M32 32 L14 42" fill="none" stroke="#ffffff" stroke-width="3" stroke-linejoin="round" />
+                        <circle cx="32" cy="32" r="4.5" fill="#06b6d4" />
+                    </svg>
+                </div>
+                <div class="brand-text">
+                    <h1>NexaDock</h1>
+                    <span class="badge-tag">Cloud Engine</span>
+                </div>
+            </a>
+
+            <div class="landing-nav-links">
+                <a href="#features">Features</a>
+                <a href="#architecture">Architecture</a>
+                <a href="/api-docs" target="_blank">Swagger Specs</a>
+            </div>
+
+            <a href="/app" class="btn btn-primary btn-sm" style="padding: 10px 20px; font-size: 13.5px;">
+                <span>Launch Dashboard ↗</span>
+            </a>
+        </header>
+
+        <!-- Hero Section -->
+        <section class="hero-section">
+            <div class="hero-badge">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+                <span>NEXADOCK CONTAINER DEPLOYMENT ENGINE v1.0</span>
+            </div>
+
+            <h1 class="hero-title">Instant Container Orchestration & Subdomain Proxying</h1>
+            
+            <p class="hero-subtitle">
+                Deploy, monitor, scale, and manage isolated Docker containers, images, bridge networks, and storage volumes in seconds through a modern web console.
+            </p>
+
+            <div class="hero-cta-group">
+                <a href="/app" class="btn btn-primary btn-lg">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+                    <span>Launch NexaDock Console</span>
+                </a>
+                <a href="/api-docs" target="_blank" class="btn btn-secondary btn-lg">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+                    <span>View OpenAPI Specs</span>
+                </a>
+            </div>
+        </section>
+
+        <!-- Architectural Vector Graphic Illustration -->
+        <div class="illustration-card" id="architecture">
+            <div class="illustration-title">⚡ NexaDock System Topology & Subdomain Proxy Router</div>
+            
+            <svg class="svg-architecture-diagram" viewBox="0 0 800 320" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <!-- Outer Border Grid -->
+                <rect x="10" y="10" width="780" height="300" rx="16" fill="#0d111c" stroke="rgba(255,255,255,0.06)" stroke-width="1.5" />
+                
+                <!-- Client Node -->
+                <rect x="40" y="110" width="140" height="100" rx="12" fill="#141927" stroke="#6366f1" stroke-width="2" />
+                <circle cx="110" cy="145" r="16" fill="rgba(99, 102, 241, 0.2)" stroke="#6366f1" stroke-width="2" />
+                <text x="110" y="182" fill="#ffffff" font-size="12" font-family="Inter" font-weight="700" text-anchor="middle">Client Request</text>
+                <text x="110" y="196" fill="#9ca3af" font-size="10" font-family="monospace" text-anchor="middle">web-demo.localhost:4000</text>
+
+                <!-- Arrow 1 -->
+                <path d="M180 160 H 260" stroke="#06b6d4" stroke-width="2.5" stroke-dasharray="6 4" />
+                <polygon points="260,155 270,160 260,165" fill="#06b6d4" />
+
+                <!-- NexaDock Proxy Engine Node -->
+                <rect x="270" y="80" width="220" height="160" rx="16" fill="#111625" stroke="#06b6d4" stroke-width="2" />
+                <rect x="290" y="100" width="180" height="36" rx="8" fill="rgba(6, 182, 212, 0.15)" />
+                <text x="380" y="123" fill="#06b6d4" font-size="13" font-family="Inter" font-weight="800" text-anchor="middle">NexaDock Proxy Engine</text>
+                
+                <text x="380" y="165" fill="#f3f4f6" font-size="11" font-family="monospace" text-anchor="middle">Port 4000 → Subdomain Router</text>
+                <text x="380" y="185" fill="#9ca3af" font-size="10" font-family="Inter" text-anchor="middle">Inspects Docker DNS & Bridge Network</text>
+                <text x="380" y="215" fill="#10b981" font-size="11" font-family="monospace" text-anchor="middle">⚡ Zero-Latency Hot Route</text>
+
+                <!-- Arrow 2 -->
+                <path d="M490 160 H 570" stroke="#10b981" stroke-width="2.5" stroke-dasharray="6 4" />
+                <polygon points="570,155 580,160 570,165" fill="#10b981" />
+
+                <!-- Container Cluster Bridge Network -->
+                <rect x="580" y="40" width="180" height="240" rx="16" fill="#141927" stroke="#10b981" stroke-width="2" />
+                <text x="670" y="65" fill="#10b981" font-size="12" font-family="Inter" font-weight="800" text-anchor="middle">deploy-engine Bridge</text>
+
+                <!-- Container 1 -->
+                <rect x="600" y="85" width="140" height="48" rx="8" fill="rgba(16, 185, 129, 0.12)" stroke="rgba(16, 185, 129, 0.3)" />
+                <text x="670" y="105" fill="#ffffff" font-size="11" font-family="monospace" font-weight="700" text-anchor="middle">web-demo:80</text>
+                <text x="670" y="121" fill="#9ca3af" font-size="9.5" font-family="monospace" text-anchor="middle">IP: 172.18.0.3</text>
+
+                <!-- Container 2 -->
+                <rect x="600" y="145" width="140" height="48" rx="8" fill="rgba(99, 102, 241, 0.12)" stroke="rgba(99, 102, 241, 0.3)" />
+                <text x="670" y="165" fill="#ffffff" font-size="11" font-family="monospace" font-weight="700" text-anchor="middle">my-postgres:5432</text>
+                <text x="670" y="181" fill="#9ca3af" font-size="9.5" font-family="monospace" text-anchor="middle">IP: 172.18.0.4</text>
+
+                <!-- Container 3 -->
+                <rect x="600" y="205" width="140" height="48" rx="8" fill="rgba(245, 158, 11, 0.12)" stroke="rgba(245, 158, 11, 0.3)" />
+                <text x="670" y="225" fill="#ffffff" font-size="11" font-family="monospace" font-weight="700" text-anchor="middle">my-cache:6379</text>
+                <text x="670" y="241" fill="#9ca3af" font-size="9.5" font-family="monospace" text-anchor="middle">IP: 172.18.0.5</text>
+            </svg>
+        </div>
+
+        <!-- Engine Stats Section -->
+        <section class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-icon purple">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+                </div>
+                <div>
+                    <div class="stat-label">Proxy Router Latency</div>
+                    <div class="stat-value" style="color:var(--primary);">&lt; 15ms</div>
+                </div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-icon cyan">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="12" cy="12" r="10"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+                </div>
+                <div>
+                    <div class="stat-label">Network Bridge</div>
+                    <div class="stat-value" style="color:var(--cyan);">deploy-engine</div>
+                </div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-icon emerald">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polyline points="20 6 9 17 4 12"/></svg>
+                </div>
+                <div>
+                    <div class="stat-label">Docker Registry API</div>
+                    <div class="stat-value" style="color:var(--emerald);">Docker Hub Real-Time</div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Features Grid Section -->
+        <section class="features-section" id="features">
+            <div class="section-title-center">
+                <h2>Built for Production Container Orchestration</h2>
+                <p class="subtitle">Complete Docker daemon management paired with dynamic host reverse proxy routing.</p>
+            </div>
+
+            <div class="features-grid">
+                <div class="feature-card">
+                    <div class="feature-icon cyan">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="12" cy="12" r="10"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+                    </div>
+                    <h3>Dynamic Subdomain Proxy</h3>
+                    <p>Instant HTTP reverse proxy mapping. Every container deployed on <code>deploy-engine</code> bridge network automatically receives a custom domain endpoint at <code>http://container-name.localhost:4000</code>.</p>
+                </div>
+
+                <div class="feature-card">
+                    <div class="feature-icon purple">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><rect x="2" y="2" width="20" height="8" rx="2"/><rect x="2" y="14" width="20" height="8" rx="2"/></svg>
+                    </div>
+                    <h3>Container Power Controls</h3>
+                    <p>Interactive single-click Start, Stop, Pause, Resume, and Force Delete. Real-time status badges with interactive skeleton loading state handling.</p>
+                </div>
+
+                <div class="feature-card">
+                    <div class="feature-icon emerald">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                    </div>
+                    <h3>Docker Hub Auto-Complete</h3>
+                    <p>Real-time official Docker image search with star ratings and description popovers as you type image names in the deploy modal.</p>
+                </div>
+
+                <div class="feature-card">
+                    <div class="feature-icon amber">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M21 16V8a2 2 0 0 1-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>
+                    </div>
+                    <h3>Image, Network & Volume Pruning</h3>
+                    <p>Monitor local image SHA256 layers, inspect container environments, prune unused Docker bridge networks, and delete persistent storage volume mounts.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Tech Stack Banner -->
+        <section class="tech-banner">
+            <h2>Powered by High-Performance Architecture</h2>
+            <p class="subtitle">Built with Bun, Express, TypeScript, and Dockerode Socket Orchestration.</p>
+            <div class="tech-badges">
+                <span class="tech-pill">TypeScript 5.x</span>
+                <span class="tech-pill">Bun Runtime</span>
+                <span class="tech-pill">Express Proxy</span>
+                <span class="tech-pill">Docker Engine API</span>
+                <span class="tech-pill">OpenAPI 3.0</span>
+                <span class="tech-pill">EJS Template Engine</span>
+            </div>
+        </section>
+
+        <!-- Landing Footer -->
+        <footer class="landing-footer">
+            <div>
+                <strong>NexaDock Enterprise Engine</strong> &copy; 2026. All rights reserved.
+            </div>
+            <div style="display:flex; gap:20px;">
+                <a href="/app" style="color:var(--primary); font-weight:600; text-decoration:none;">Dashboard Console</a>
+                <a href="/api-docs" target="_blank" style="color:var(--text-muted); text-decoration:none;">OpenAPI Specs</a>
+            </div>
+        </footer>
+    </div>
+</body>
+</html>

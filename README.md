@@ -1,4 +1,4 @@
-# Dockpoly Engine 🚀
+# NexaDock Enterprise Engine 🚀
 
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.0+-3178C6?style=flat-square&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
 [![Express.js](https://img.shields.io/badge/Express.js-5.2.1-000000?style=flat-square&logo=express&logoColor=white)](https://expressjs.com/)
@@ -13,7 +13,9 @@ A high-performance, modular Cloud Container Engine built with **TypeScript**, **
 ## ⚡ Key Features
 
 - **🌐 Dynamic Subdomain Reverse Proxy**: Automatically routes subdomain HTTP requests (e.g. `http://my-app.localhost:4000`) directly to container internal IP addresses (`172.18.0.x`) on the custom `deploy-engine` bridge network without exposing host ports.
-- **🎨 Glassmorphic EJS Template Engine UI**: Server-side rendered dashboard using Express + EJS (`views/index.ejs`, `views/partials/`) featuring dark glassmorphism, micro-animations, and responsive tab navigation.
+- **🎨 Glassmorphic EJS Template Engine UI**: Server-side rendered dashboard using Express + EJS (`views/landing.ejs`, `views/index.ejs`, `views/partials/`) featuring dark glassmorphism, micro-animations, and responsive tab navigation.
+- **📱 Enterprise Mobile Sidebar Drawer & Desktop Navigation**: Dedicated mobile slide-over drawer navigation and fixed sticky navbar for desktop viewports.
+- **📋 Single-Click Copy Utility**: One-click clipboard copying for IP addresses, URLs, short/long IDs, and mountpoints with checkmark visual feedback.
 - **🔍 Real-Time Docker Hub Auto-Complete**: Live search against Docker Hub (`GET /image/search?q=...`) in the Deploy Container modal showing Official badges, star ratings, and descriptions.
 - **⚡ Non-Flickering Skeleton UI & Action Disabling**: Shimmering CSS skeleton loaders prevent UI flickering. Action buttons are automatically disabled and show inline spinners during async operations.
 - **⏯️ Container Power Controls**: Start, Stop, Pause, Resume, Inspect, and Delete containers on-demand via REST API or UI.
@@ -25,7 +27,7 @@ A high-performance, modular Cloud Container Engine built with **TypeScript**, **
 ## 🛠️ Architecture Overview
 
 ```
- [ Public Client Browser ] ──────────> [ Reverse Proxy Server (Port 4000) ]
+ [ Public Client Browser ] ──────────> [ NexaDock Reverse Proxy (Port 4000) ]
                                                 │ (Subdomain IP Resolution)
                                                 ▼
                                     [ Managed Docker Container ]
@@ -42,97 +44,35 @@ A high-performance, modular Cloud Container Engine built with **TypeScript**, **
 
 ---
 
-## 📂 Directory Structure
+## 🚀 Quick Start
 
-```
-dockpoly-clone/
-├── config/
-│   ├── app.config.ts            # Environment variables configuration (.env loader)
-│   └── docker.config.ts         # Dockerode client initialization
-├── controller/
-│   └── managementApp.controller.ts # Request handlers for container, image, network, volume
-├── proxy.ts                     # Reverse proxy routing logic using http-proxy-middleware
-├── routes/
-│   └── managementApp.route.ts   # Express REST route declarations
-├── services/
-│   └── managementApp.services.ts# Core Dockerode engine business logic
-├── views/                       # EJS Template Engine views
-│   ├── partials/
-│   │   ├── header.ejs           # Header & navbar partial
-│   │   └── modals.ejs           # Deploy, delete, and inspect modals partial
-│   └── index.ejs                # Main dashboard template
-├── public/                      # Static assets
-│   ├── app.js                   # Client-side UI interaction script & skeleton handlers
-│   └── style.css                # Custom glassmorphic CSS design system
-├── index.ts                     # Express server bootstrapper (Management + Proxy servers)
-├── docker-compose.yml           # Container orchestration compose configuration
-├── Dockerfile                   # Multi-stage optimized Alpine Dockerfile
-├── package.json                 # Dependencies & scripts
-└── README.md                    # Engine documentation
-```
+### Prerequisites
+- [Bun](https://bun.sh) (v1.0+) or Node.js (v18+)
+- [Docker Desktop](https://www.docker.com/) running locally
 
----
-
-## 🚀 Getting Started
-
-### 1. Prerequisites
-- **Node.js** (v18+) or **Bun** (v1.3+)
-- **Docker Engine / Docker Desktop** running locally.
-  - *Windows Note*: If running via Bun on Windows, enable *"Expose daemon on tcp://localhost:2375 without TLS"* in Docker Desktop settings.
-
-### 2. Environment Variables (.env)
-Create a `.env` file in the root directory:
-
-```env
-PORT=4000
-MANAGEMENT_PORT=3000
-MANAGEMENT_HOST=127.0.0.1
-DOMAIN=localhost
-DOCKER_NETWORK=deploy-engine
-```
-
-### 3. Run Locally
-
+### Installation & Local Run
 ```bash
+# Clone the repository
+git clone https://github.com/usmanahmedgoray/docker-deploy-engine.git
+cd docker-deploy-engine
+
 # Install dependencies
 bun install
 
-# Run in development mode (hot reload)
+# Run the engine
 bun run dev
-
-### 3. Run Unit & Integration Tests
-
-```bash
-bun test
 ```
 
-### 4. Interactive Swagger UI Documentation
-
-Production-grade interactive OpenAPI 3.0 documentation is available at:
-👉 **`http://localhost:4000/api-docs`**
-
-Access Dashboard UI at: **`http://localhost:4000/`**
+The application will launch on:
+- 🌐 **Landing Page**: `http://localhost:4000/`
+- 🚀 **Dashboard App**: `http://localhost:4000/app`
+- 📄 **Swagger API Specs**: `http://localhost:4000/api-docs`
 
 ---
 
-## 📡 REST API Reference
+## 🧪 Testing
 
-| Method | Endpoint | Description |
-| :--- | :--- | :--- |
-| `GET` | `/container` | List all managed containers on `deploy-engine` network |
-| `POST` | `/container` | Deploy & launch a new container from Docker image |
-| `GET` | `/container/:identifier` | Inspect single container IP, env, and status |
-| `POST` | `/container/:identifier/:action` | Power action (`start`, `stop`, `pause`, `unpause`) |
-| `DELETE` | `/container/:identifier` | Delete container (`?force=true`) |
-| `GET` | `/image` | List cached local Docker images |
-| `GET` | `/image/search?q=:query` | Search Docker Hub for image auto-complete |
-| `GET` | `/image/inspect/:identifier` | Inspect A-Z detailed image specification |
-| `DELETE` | `/image/:identifier` | Delete local Docker image (`?force=true`) |
-| `GET` | `/network` | List Docker networks |
-| `GET` | `/volume` | List Docker volumes |
-
----
-
-## 📄 License
-
-This project is licensed under the [MIT License](LICENSE).
+```bash
+# Run unit & integration test suite
+bun test
+```

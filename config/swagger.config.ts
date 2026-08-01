@@ -6,12 +6,12 @@ const options: swaggerJsdoc.Options = {
     definition: {
         openapi: "3.0.0",
         info: {
-            title: "Dockpoly Engine REST API Specifications",
+            title: "NexaDock Enterprise Engine REST API Specifications",
             version: "1.0.0",
             description:
                 "Production-grade programmatic Docker container lifecycle management API, dynamic subdomain reverse proxy routing, and Docker daemon orchestration.",
             contact: {
-                name: "Dockpoly Core Engineering",
+                name: "NexaDock Core Engineering",
                 url: "https://github.com/usmanahmedgoray/docker-deploy-engine",
             },
         },

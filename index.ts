@@ -21,6 +21,10 @@ setupSwagger(managementApp);
 managementApp.use("/", managementAppRoutes);
 
 managementApp.get("/", (req: Request, res: Response) => {
+    res.render("landing", { config });
+});
+
+managementApp.get("/app", (req: Request, res: Response) => {
     res.render("index", { config });
 });
 
