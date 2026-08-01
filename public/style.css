@@ -96,7 +96,7 @@ body {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 12px 24px;
+    padding: 14px 28px;
     background: rgba(17, 21, 34, 0.88);
     backdrop-filter: blur(24px);
     border: 1px solid var(--border-color);

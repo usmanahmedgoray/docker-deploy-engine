@@ -1,0 +1,1550 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NexaDock — Developer Documentation</title>
+    <meta name="description" content="Complete developer guide for NexaDock Enterprise Container Engine. Architecture, REST API, CLI commands, subdomain proxy, networks, volumes, and more.">
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Fira+Code:wght@400;500;600&display=swap" rel="stylesheet">
+    <!-- Highlight.js for syntax highlighting -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css">
+    <!-- NexaDock Package Manager Tabs Utility -->
+    <script src="/pkg-tabs.js"></script>
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        :root {
+            --bg: #08090f;
+            --bg-surface: #0e1020;
+            --bg-card: #111527;
+            --border: rgba(255,255,255,0.07);
+            --border-hl: rgba(99,102,241,0.35);
+            --primary: #6366f1;
+            --primary-glow: rgba(99,102,241,0.25);
+            --cyan: #06b6d4;
+            --emerald: #10b981;
+            --amber: #f59e0b;
+            --red: #ef4444;
+            --text: #c4cde8;
+            --text-muted: #6b7694;
+            --text-bright: #f0f4ff;
+            --sidebar-w: 268px;
+            --topbar-h: 60px;
+            --radius: 10px;
+        }
+
+        html { scroll-behavior: smooth; }
+
+        body {
+            font-family: 'Inter', system-ui, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.7;
+            font-size: 15px;
+            overflow-x: hidden;
+        }
+
+        /* ──────────────── TOPBAR ──────────────── */
+        .topbar {
+            position: fixed;
+            top: 0; left: 0; right: 0;
+            height: var(--topbar-h);
+            background: rgba(8,9,15,0.9);
+            backdrop-filter: blur(20px);
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 24px;
+            z-index: 1000;
+        }
+
+        .topbar-brand {
+            display: flex; align-items: center; gap: 10px;
+            text-decoration: none;
+        }
+
+        .topbar-logo {
+            width: 34px; height: 34px;
+            border-radius: 9px;
+            background: linear-gradient(135deg, var(--primary), var(--cyan));
+            display: flex; align-items: center; justify-content: center;
+            box-shadow: 0 0 14px var(--primary-glow);
+        }
+
+        .topbar-name { font-weight: 800; font-size: 16px; color: #fff; }
+
+        .topbar-badge {
+            font-size: 10px; font-weight: 700; text-transform: uppercase;
+            letter-spacing: 0.6px; color: var(--primary);
+            background: rgba(99,102,241,0.1);
+            border: 1px solid rgba(99,102,241,0.2);
+            padding: 2px 7px; border-radius: 4px;
+        }
+
+        .topbar-actions { display: flex; align-items: center; gap: 8px; }
+
+        .tb-btn {
+            display: inline-flex; align-items: center; gap: 6px;
+            padding: 7px 14px;
+            border-radius: 8px; font-size: 13px; font-weight: 600;
+            text-decoration: none; cursor: pointer; border: none;
+            font-family: 'Inter', sans-serif;
+            transition: all 0.18s;
+        }
+
+        .tb-btn.ghost {
+            background: rgba(255,255,255,0.05);
+            border: 1px solid var(--border);
+            color: var(--text);
+        }
+        .tb-btn.ghost:hover { background: rgba(255,255,255,0.1); color: #fff; }
+
+        .tb-btn.solid {
+            background: linear-gradient(135deg, #6366f1, #4f46e5);
+            color: #fff;
+            box-shadow: 0 4px 12px rgba(99,102,241,0.3);
+        }
+        .tb-btn.solid:hover { box-shadow: 0 6px 20px rgba(99,102,241,0.5); transform: translateY(-1px); }
+
+        /* ──────────────── LAYOUT ──────────────── */
+        .layout {
+            display: flex;
+            padding-top: var(--topbar-h);
+            min-height: 100vh;
+        }
+
+        /* ──────────────── SIDEBAR ──────────────── */
+        .sidebar {
+            width: var(--sidebar-w);
+            flex-shrink: 0;
+            position: sticky;
+            top: var(--topbar-h);
+            height: calc(100vh - var(--topbar-h));
+            overflow-y: auto;
+            background: var(--bg-surface);
+            border-right: 1px solid var(--border);
+            padding: 24px 0 40px;
+        }
+
+        .sidebar::-webkit-scrollbar { width: 4px; }
+        .sidebar::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 2px; }
+
+        .nav-section { margin-bottom: 6px; }
+
+        .nav-label {
+            display: block;
+            font-size: 10.5px; font-weight: 700; text-transform: uppercase;
+            letter-spacing: 0.8px; color: var(--text-muted);
+            padding: 14px 20px 6px;
+        }
+
+        .nav-item {
+            display: flex; align-items: center; gap: 9px;
+            padding: 8px 20px;
+            color: var(--text-muted); text-decoration: none;
+            font-size: 13.5px; font-weight: 500;
+            border-left: 2px solid transparent;
+            transition: all 0.15s;
+            cursor: pointer;
+        }
+
+        .nav-item:hover, .nav-item.active {
+            color: #fff;
+            border-left-color: var(--primary);
+            background: rgba(99,102,241,0.07);
+        }
+
+        .nav-item svg { flex-shrink: 0; opacity: 0.7; }
+        .nav-item:hover svg, .nav-item.active svg { opacity: 1; }
+
+        /* ──────────────── CONTENT ──────────────── */
+        .content {
+            flex: 1; min-width: 0;
+            padding: 48px 60px 80px;
+            max-width: 900px;
+        }
+
+        /* ──────────────── SECTION BLOCKS ──────────────── */
+        .doc-section {
+            display: none;
+            animation: fadeIn 0.2s ease;
+        }
+        .doc-section.active { display: block; }
+
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* ──────────────── TYPOGRAPHY ──────────────── */
+        .section-hero {
+            margin-bottom: 40px;
+            padding-bottom: 32px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .section-hero h1 {
+            font-size: 34px; font-weight: 900; letter-spacing: -1px;
+            color: var(--text-bright); margin-bottom: 12px;
+            background: linear-gradient(135deg, #fff 40%, #818cf8);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+        }
+
+        .section-hero p { font-size: 16px; color: var(--text-muted); max-width: 640px; }
+
+        h2 {
+            font-size: 22px; font-weight: 800; color: var(--text-bright);
+            margin: 40px 0 16px; letter-spacing: -0.4px;
+            display: flex; align-items: center; gap: 10px;
+        }
+
+        h2::before {
+            content: '';
+            display: block; width: 3px; height: 22px;
+            background: linear-gradient(180deg, var(--primary), var(--cyan));
+            border-radius: 2px; flex-shrink: 0;
+        }
+
+        h3 {
+            font-size: 16px; font-weight: 700; color: var(--text-bright);
+            margin: 28px 0 12px;
+        }
+
+        p { color: var(--text); line-height: 1.75; margin-bottom: 16px; }
+
+        a { color: var(--primary); text-decoration: none; }
+        a:hover { color: #818cf8; text-decoration: underline; }
+
+        code {
+            font-family: 'Fira Code', monospace;
+            font-size: 13px; background: rgba(99,102,241,0.1);
+            color: #a5b4fc; padding: 2px 7px; border-radius: 5px;
+        }
+
+        /* ──────────────── CMD / CODE BLOCKS ──────────────── */
+        .cmd {
+            position: relative;
+            background: #0b0e1c;
+            border: 1px solid var(--border);
+            border-left: 3px solid var(--cyan);
+            border-radius: var(--radius);
+            padding: 14px 52px 14px 18px;
+            margin: 14px 0;
+            font-family: 'Fira Code', monospace;
+            font-size: 13.5px;
+            color: #67e8f9;
+            overflow-x: auto;
+            white-space: pre;
+        }
+
+        .cmd .copy-btn {
+            position: absolute;
+            top: 8px; right: 8px;
+            background: rgba(99,102,241,0.12);
+            border: 1px solid rgba(99,102,241,0.25);
+            color: #a5b4fc; padding: 4px 10px;
+            border-radius: 6px; font-size: 11.5px; font-weight: 600;
+            cursor: pointer; font-family: 'Inter', sans-serif;
+            transition: all 0.18s; white-space: nowrap;
+        }
+
+        .cmd .copy-btn:hover { background: var(--primary); color: #fff; }
+        .cmd .copy-btn.copied { background: rgba(16,185,129,0.15); border-color: rgba(16,185,129,0.3); color: #34d399; }
+
+        /* Highlight.js overrides */
+        pre code.hljs {
+            background: #0b0e1c !important;
+            border-radius: var(--radius);
+            font-size: 13px;
+            font-family: 'Fira Code', monospace;
+            padding: 18px 20px;
+        }
+
+        pre {
+            position: relative;
+            margin: 14px 0;
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            overflow: hidden;
+        }
+
+        pre .copy-btn {
+            position: absolute;
+            top: 8px; right: 8px;
+            background: rgba(99,102,241,0.12);
+            border: 1px solid rgba(99,102,241,0.25);
+            color: #a5b4fc; padding: 4px 10px;
+            border-radius: 6px; font-size: 11.5px; font-weight: 600;
+            cursor: pointer; font-family: 'Inter', sans-serif;
+            transition: all 0.18s;
+        }
+
+        pre .copy-btn:hover { background: var(--primary); color: #fff; }
+        pre .copy-btn.copied { background: rgba(16,185,129,0.15); border-color: rgba(16,185,129,0.3); color: #34d399; }
+
+        /* ──────────────── CALLOUTS ──────────────── */
+        .callout {
+            display: flex; gap: 12px;
+            padding: 14px 18px;
+            border-radius: var(--radius);
+            margin: 18px 0;
+            font-size: 14px; line-height: 1.6;
+        }
+        .callout-icon { flex-shrink: 0; margin-top: 1px; font-size: 16px; }
+        .callout p { margin: 0; }
+
+        .callout.info { background: rgba(99,102,241,0.08); border-left: 3px solid var(--primary); color: #a5b4fc; }
+        .callout.warning { background: rgba(245,158,11,0.08); border-left: 3px solid var(--amber); color: #fde68a; }
+        .callout.success { background: rgba(16,185,129,0.08); border-left: 3px solid var(--emerald); color: #6ee7b7; }
+        .callout.danger { background: rgba(239,68,68,0.08); border-left: 3px solid var(--red); color: #fca5a5; }
+
+        /* ──────────────── TABLES ──────────────── */
+        table {
+            width: 100%; border-collapse: collapse;
+            margin: 20px 0; font-size: 14px;
+        }
+        th, td { padding: 11px 16px; border: 1px solid var(--border); text-align: left; }
+        th { background: rgba(255,255,255,0.03); color: var(--text-bright); font-weight: 700; }
+        tr:nth-child(even) td { background: rgba(255,255,255,0.02); }
+        td code { font-size: 12px; }
+
+        /* ──────────────── ARCH DIAGRAM ──────────────── */
+        .arch-box {
+            background: var(--bg-surface);
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            padding: 28px 20px;
+            margin: 24px 0;
+            overflow-x: auto;
+            text-align: center;
+        }
+
+        /* ──────────────── FEATURE GRID ──────────────── */
+        .feature-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: 16px; margin: 24px 0;
+        }
+
+        .feature-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 20px;
+            transition: all 0.2s;
+        }
+        .feature-card:hover { border-color: var(--border-hl); transform: translateY(-2px); }
+
+        .fc-icon {
+            width: 40px; height: 40px; border-radius: 10px;
+            display: flex; align-items: center; justify-content: center;
+            margin-bottom: 14px; font-size: 20px;
+        }
+
+        .fc-icon.purple { background: rgba(99,102,241,0.12); }
+        .fc-icon.cyan { background: rgba(6,182,212,0.12); }
+        .fc-icon.emerald { background: rgba(16,185,129,0.12); }
+        .fc-icon.amber { background: rgba(245,158,11,0.12); }
+
+        .feature-card h4 { font-size: 15px; font-weight: 700; color: var(--text-bright); margin-bottom: 8px; }
+        .feature-card p { font-size: 13.5px; color: var(--text-muted); line-height: 1.6; margin: 0; }
+
+        /* ──────────────── BADGE / TAG ──────────────── */
+        .badge {
+            display: inline-flex; align-items: center; gap: 5px;
+            padding: 3px 9px; border-radius: 20px; font-size: 12px; font-weight: 600;
+        }
+        .badge.green { background: rgba(16,185,129,0.12); color: #34d399; border: 1px solid rgba(16,185,129,0.2); }
+        .badge.blue { background: rgba(99,102,241,0.12); color: #a5b4fc; border: 1px solid rgba(99,102,241,0.2); }
+        .badge.amber { background: rgba(245,158,11,0.12); color: #fbbf24; border: 1px solid rgba(245,158,11,0.2); }
+        .badge.red { background: rgba(239,68,68,0.12); color: #f87171; border: 1px solid rgba(239,68,68,0.2); }
+
+        /* ──────────────── DIVIDER ──────────────── */
+        hr { border: none; border-top: 1px solid var(--border); margin: 36px 0; }
+
+        /* ──────────────── MOBILE ──────────────── */
+        .mobile-sidebar-toggle {
+            display: none;
+            align-items: center; justify-content: center;
+            width: 36px; height: 36px; border-radius: 8px;
+            background: rgba(255,255,255,0.05); border: 1px solid var(--border);
+            color: var(--text); cursor: pointer;
+        }
+
+        @media (max-width: 900px) {
+            .content { padding: 32px 24px 60px; }
+        }
+
+        @media (max-width: 768px) {
+            .sidebar { position: fixed; left: -100%; top: var(--topbar-h); height: calc(100vh - var(--topbar-h)); z-index: 500; transition: left 0.25s; }
+            .sidebar.open { left: 0; }
+            .mobile-sidebar-toggle { display: flex; }
+            .topbar-actions .tb-btn span { display: none; }
+            .content { padding: 24px 18px 60px; }
+        }
+        /* ──────────────── PAGE NAV FOOTER ──────────────── */
+        .page-nav-footer {
+            display: flex;
+            gap: 16px;
+            margin-top: 56px;
+            padding-top: 32px;
+            border-top: 1px solid var(--border);
+        }
+
+        .page-nav-card {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            padding: 18px 20px;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            text-decoration: none;
+            cursor: pointer;
+            transition: all 0.2s;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .page-nav-card::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(135deg, rgba(99,102,241,0.05), rgba(6,182,212,0.05));
+            opacity: 0;
+            transition: opacity 0.2s;
+        }
+
+        .page-nav-card:hover {
+            border-color: var(--border-hl);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px rgba(0,0,0,0.3);
+        }
+
+        .page-nav-card:hover::before { opacity: 1; }
+
+        .page-nav-card.prev { justify-content: flex-start; }
+        .page-nav-card.next { justify-content: flex-end; text-align: right; }
+        .page-nav-card.next .page-nav-text { align-items: flex-end; }
+
+        .page-nav-arrow {
+            width: 36px; height: 36px; border-radius: 9px;
+            background: rgba(99,102,241,0.1);
+            border: 1px solid rgba(99,102,241,0.2);
+            display: flex; align-items: center; justify-content: center;
+            color: #818cf8; flex-shrink: 0;
+            transition: all 0.2s;
+        }
+
+        .page-nav-card:hover .page-nav-arrow {
+            background: var(--primary);
+            color: #fff;
+            border-color: var(--primary);
+        }
+
+        .page-nav-text {
+            display: flex; flex-direction: column; gap: 3px;
+        }
+
+        .page-nav-label {
+            font-size: 10.5px; font-weight: 700; text-transform: uppercase;
+            letter-spacing: 0.6px; color: var(--text-muted);
+        }
+
+        .page-nav-name {
+            font-size: 14px; font-weight: 700; color: var(--text-bright);
+            display: flex; align-items: center; gap: 6px;
+        }
+
+        .page-nav-spacer { flex: 1; }
+
+        /* ──────────────── STEP LIST ──────────────── */
+        .step-list { margin: 20px 0; display: flex; flex-direction: column; gap: 0; }
+
+        .step-item {
+            display: flex; gap: 16px;
+            padding: 16px 0;
+            border-bottom: 1px solid var(--border);
+        }
+        .step-item:last-child { border-bottom: none; }
+
+        .step-num {
+            width: 32px; height: 32px; border-radius: 50%; flex-shrink: 0;
+            background: rgba(99,102,241,0.12);
+            border: 1px solid rgba(99,102,241,0.25);
+            display: flex; align-items: center; justify-content: center;
+            font-size: 13px; font-weight: 800; color: #818cf8;
+            margin-top: 2px;
+        }
+
+        .step-body h4 { font-size: 14.5px; font-weight: 700; color: var(--text-bright); margin-bottom: 5px; }
+        .step-body p { font-size: 13.5px; color: var(--text-muted); margin: 0; line-height: 1.6; }
+        .step-body code { font-size: 12px; }
+
+        /* ──────────────── COMPARISON TABLE ──────────────── */
+        .compare-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px; margin: 20px 0;
+        }
+
+        .compare-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 18px;
+        }
+
+        .compare-card h4 {
+            font-size: 13px; font-weight: 700; text-transform: uppercase;
+            letter-spacing: 0.5px; margin-bottom: 12px;
+        }
+
+        .compare-card.do { border-top: 2px solid var(--emerald); }
+        .compare-card.do h4 { color: var(--emerald); }
+        .compare-card.dont { border-top: 2px solid var(--red); }
+        .compare-card.dont h4 { color: var(--red); }
+
+        .compare-card ul { list-style: none; display: flex; flex-direction: column; gap: 8px; }
+        .compare-card ul li { font-size: 13.5px; color: var(--text-muted); display: flex; gap: 8px; align-items: flex-start; }
+        .compare-card.do ul li::before { content: '✓'; color: var(--emerald); font-weight: 700; flex-shrink: 0; }
+        .compare-card.dont ul li::before { content: '✗'; color: var(--red); font-weight: 700; flex-shrink: 0; }
+
+        @media (max-width: 600px) {
+            .compare-grid { grid-template-columns: 1fr; }
+            .page-nav-footer { flex-direction: column; }
+        }
+    </style>
+</head>
+<body>
+
+<!-- ═══════════ TOPBAR ═══════════ -->
+<header class="topbar">
+    <div style="display:flex;align-items:center;gap:12px;">
+        <button class="mobile-sidebar-toggle" id="sidebarToggle" aria-label="Toggle navigation">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+        </button>
+        <a href="/" class="topbar-brand">
+            <div class="topbar-logo">
+                <svg viewBox="0 0 64 64" width="20" height="20">
+                    <path d="M32 10 L50 20 V42 L32 52 L14 42 V20 Z" fill="none" stroke="#fff" stroke-width="3.5" stroke-linejoin="round"/>
+                    <circle cx="32" cy="32" r="4.5" fill="#06b6d4"/>
+                </svg>
+            </div>
+            <span class="topbar-name">NexaDock</span>
+            <span class="topbar-badge">Docs</span>
+        </a>
+    </div>
+    <div class="topbar-actions">
+        <a href="/api-docs" target="_blank" class="tb-btn ghost">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+            <span>Swagger UI</span>
+        </a>
+        <a href="/app" class="tb-btn solid">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+            <span>Open Console</span>
+        </a>
+    </div>
+</header>
+
+<!-- ═══════════ LAYOUT ═══════════ -->
+<div class="layout">
+
+    <!-- ─── SIDEBAR ─── -->
+    <aside class="sidebar" id="sidebar">
+        <div class="nav-section">
+            <span class="nav-label">Getting Started</span>
+            <a class="nav-item active" data-section="overview">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>
+                Overview
+            </a>
+            <a class="nav-item" data-section="quickstart">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+                Quick Start
+            </a>
+            <a class="nav-item" data-section="architecture">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="6" height="6"/><rect x="9" y="3" width="6" height="6"/><rect x="16" y="3" width="6" height="6"/><line x1="5" y1="9" x2="5" y2="18"/><line x1="12" y1="9" x2="12" y2="18"/><line x1="5" y1="18" x2="19" y2="18"/><line x1="19" y1="9" x2="19" y2="18"/></svg>
+                Architecture
+            </a>
+        </div>
+
+        <div class="nav-section">
+            <span class="nav-label">Core Features</span>
+            <a class="nav-item" data-section="containers">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="2" width="20" height="8" rx="2"/><rect x="2" y="14" width="20" height="8" rx="2"/></svg>
+                Containers
+            </a>
+            <a class="nav-item" data-section="images">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="22" y1="12" x2="2" y2="12"/><path d="M5.45 5.11L2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/></svg>
+                Images & Registry
+            </a>
+            <a class="nav-item" data-section="proxy">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+                Subdomain Proxy
+            </a>
+            <a class="nav-item" data-section="networks">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 10h-4V6"/><path d="M14 10l5-5"/><rect x="2" y="14" width="8" height="8" rx="1"/><circle cx="18" cy="18" r="4"/></svg>
+                Networks
+            </a>
+            <a class="nav-item" data-section="volumes">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>
+                Volumes
+            </a>
+        </div>
+
+        <div class="nav-section">
+            <span class="nav-label">Reference</span>
+            <a class="nav-item" data-section="rest-api">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 6l4-4 4 4"/><path d="M16 18l-4 4-4-4"/><line x1="12" y1="2" x2="12" y2="22"/></svg>
+                REST API Reference
+            </a>
+            <a class="nav-item" data-section="cli">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/></svg>
+                CLI Commands
+            </a>
+            <a class="nav-item" data-section="testing">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+                Testing & Validation
+            </a>
+            <a class="nav-item" data-section="config">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+                Configuration
+            </a>
+            <a class="nav-item" data-section="env">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                .env Reference
+            </a>
+        </div>
+    </aside>
+
+    <!-- ─── MAIN CONTENT ─── -->
+    <main class="content">
+
+        <!-- ════════ OVERVIEW ════════ -->
+        <section class="doc-section active" id="section-overview">
+            <div class="section-hero">
+                <h1>NexaDock Engine</h1>
+                <p>Enterprise-grade Docker deployment engine and dynamic subdomain reverse proxy. Self-hosted, type-safe, built for speed.</p>
+            </div>
+
+            <h2>What is NexaDock?</h2>
+            <p>NexaDock is a self-hosted platform that combines a <strong>Docker container management API</strong> with a <strong>dynamic subdomain reverse proxy</strong>. Every container you deploy instantly gets its own URL — no nginx config files, no manual DNS.</p>
+
+            <div class="feature-grid">
+                <div class="feature-card">
+                    <div class="fc-icon purple">🚀</div>
+                    <h4>Instant Deployment</h4>
+                    <p>Pull, create, start, and proxy a container with a single API call or from the dashboard console.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="fc-icon cyan">🌐</div>
+                    <h4>Dynamic Subdomain Proxy</h4>
+                    <p>Every container on the <code>deploy-engine</code> network gets a <code>name.localhost:4000</code> URL automatically.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="fc-icon emerald">🔒</div>
+                    <h4>Full Lifecycle Control</h4>
+                    <p>Start, stop, pause, resume, inspect, and delete containers — with confirmation dialogs on destructive actions.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="fc-icon amber">📊</div>
+                    <h4>Real-time Metrics</h4>
+                    <p>Monitor CPU, memory, and network I/O for running containers from the metrics dashboard tab.</p>
+                </div>
+            </div>
+
+            <h2>Technology Stack</h2>
+            <table>
+                <thead><tr><th>Technology</th><th>Role</th><th>Version</th></tr></thead>
+                <tbody>
+                    <tr><td><strong>Bun</strong></td><td>Runtime, test runner, package manager</td><td>v1.3+</td></tr>
+                    <tr><td><strong>TypeScript</strong></td><td>Type-safe backend language</td><td>v5+</td></tr>
+                    <tr><td><strong>Express v5</strong></td><td>HTTP API & view server</td><td>v5.x</td></tr>
+                    <tr><td><strong>Dockerode</strong></td><td>Docker daemon socket client</td><td>v4</td></tr>
+                    <tr><td><strong>EJS</strong></td><td>Server-side HTML templating</td><td>v3</td></tr>
+                    <tr><td><strong>http-proxy-middleware</strong></td><td>Reverse proxy engine</td><td>v3</td></tr>
+                    <tr><td><strong>swagger-ui-express</strong></td><td>OpenAPI documentation UI</td><td>latest</td></tr>
+                </tbody>
+            </table>
+
+            <h2>Service Endpoints</h2>
+            <table>
+                <thead><tr><th>URL</th><th>Description</th></tr></thead>
+                <tbody>
+                    <tr><td><code>http://localhost:4000/</code></td><td>Landing page</td></tr>
+                    <tr><td><code>http://localhost:4000/app</code></td><td>Dashboard console</td></tr>
+                    <tr><td><code>http://localhost:4000/docs</code></td><td>This documentation</td></tr>
+                    <tr><td><code>http://localhost:4000/api-docs</code></td><td>Swagger OpenAPI UI</td></tr>
+                    <tr><td><code>http://[container].localhost:4000</code></td><td>Dynamic subdomain proxy</td></tr>
+                </tbody>
+            </table>
+        </section>
+
+        <!-- ════════ QUICK START ════════ -->
+        <section class="doc-section" id="section-quickstart">
+            <div class="section-hero">
+                <h1>Quick Start</h1>
+                <p>Get NexaDock running locally in under 2 minutes.</p>
+            </div>
+
+            <div class="callout info">
+                <span class="callout-icon">💡</span>
+                <p><strong>Prerequisites:</strong> Docker Desktop (or Docker Engine) installed and running. Bun v1.3+ for local development.</p>
+            </div>
+
+            <h2>Option A — Docker Compose (Recommended)</h2>
+            <h3>1. Clone the repository</h3>
+            <div class="cmd">git clone https://github.com/your-org/nexadock && cd nexadock<button class="copy-btn">Copy</button></div>
+
+            <h3>2. Start with Docker Compose</h3>
+            <div class="cmd">docker compose up -d --build<button class="copy-btn">Copy</button></div>
+            <p>This builds the image, creates the <code>deploy-engine</code> bridge network, and starts <code>dockpoly-engine</code> container. Visit <code>http://localhost:4000</code>.</p>
+
+            <h2>Option B — Local Development</h2>
+
+            <h3>1. Install dependencies</h3>
+            <div class="pkg-tabs"
+                 data-npm="npm install"
+                 data-pnpm="pnpm install"
+                 data-yarn="yarn install"
+                 data-bun="bun install">
+            </div>
+
+            <h3>2. Start development server</h3>
+            <div class="pkg-tabs"
+                 data-npm="npm run dev"
+                 data-pnpm="pnpm dev"
+                 data-yarn="yarn dev"
+                 data-bun="bun run dev">
+            </div>
+
+            <h3>3. Run tests</h3>
+            <div class="pkg-tabs"
+                 data-npm="npm test"
+                 data-pnpm="pnpm test"
+                 data-yarn="yarn test"
+                 data-bun="bun test">
+            </div>
+
+            <h3>4. Rebuild after changes</h3>
+            <div class="cmd">docker compose up -d --build<button class="copy-btn">Copy</button></div>
+
+            <h2>Verify it's working</h2>
+            <div class="cmd">curl http://localhost:4000/container<button class="copy-btn">Copy</button></div>
+            <p>You should receive a JSON array of containers. An empty array <code>[]</code> is valid — it means no containers are running on the <code>deploy-engine</code> network yet.</p>
+
+            <div class="callout success">
+                <span class="callout-icon">✅</span>
+                <p>Dashboard at <strong>http://localhost:4000/app</strong> — ready to deploy your first container!</p>
+            </div>
+        </section>
+
+        <!-- ════════ ARCHITECTURE ════════ -->
+        <section class="doc-section" id="section-architecture">
+            <div class="section-hero">
+                <h1>Architecture</h1>
+                <p>NexaDock runs two Express servers inside one Docker container — a public proxy and an internal management API.</p>
+            </div>
+
+            <div class="arch-box">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 740 300" width="100%" style="max-width:740px;font-family:Inter,sans-serif;">
+                    <defs>
+                        <marker id="arr" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+                            <path d="M0,0 L0,6 L8,3 z" fill="#6366f1"/>
+                        </marker>
+                        <marker id="arr2" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+                            <path d="M0,0 L0,6 L8,3 z" fill="#06b6d4"/>
+                        </marker>
+                        <marker id="arr3" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+                            <path d="M0,0 L0,6 L8,3 z" fill="#10b981"/>
+                        </marker>
+                    </defs>
+
+                    <!-- Client -->
+                    <rect x="10" y="110" width="120" height="70" rx="10" fill="#0f1629" stroke="#6366f1" stroke-width="1.5"/>
+                    <text x="70" y="138" text-anchor="middle" fill="#a5b4fc" font-size="10" font-weight="700">CLIENT BROWSER</text>
+                    <text x="70" y="156" text-anchor="middle" fill="#6366f1" font-size="10">web-demo.localhost</text>
+                    <text x="70" y="170" text-anchor="middle" fill="#818cf8" font-size="10" font-weight="700">:4000</text>
+
+                    <!-- Arrow 1 -->
+                    <line x1="132" y1="145" x2="178" y2="145" stroke="#6366f1" stroke-width="1.5" stroke-dasharray="4,3" marker-end="url(#arr)"/>
+                    <text x="155" y="138" text-anchor="middle" fill="#6b7694" font-size="9">HTTP</text>
+
+                    <!-- Proxy -->
+                    <rect x="180" y="80" width="145" height="140" rx="10" fill="#0f1629" stroke="#6366f1" stroke-width="2"/>
+                    <text x="252" y="108" text-anchor="middle" fill="#818cf8" font-size="9" font-weight="700">REVERSE PROXY</text>
+                    <text x="252" y="128" text-anchor="middle" fill="#fff" font-size="13" font-weight="800">proxy.ts</text>
+                    <text x="252" y="148" text-anchor="middle" fill="#6366f1" font-size="11" font-weight="700">Port 4000</text>
+                    <text x="252" y="166" text-anchor="middle" fill="#6b7694" font-size="9">Subdomain resolver</text>
+                    <text x="252" y="181" text-anchor="middle" fill="#6b7694" font-size="9">Docker IP lookup</text>
+                    <text x="252" y="196" text-anchor="middle" fill="#6b7694" font-size="9">HTTP proxy routing</text>
+
+                    <!-- Arrow 2: proxy -> mgmt -->
+                    <line x1="325" y1="130" x2="385" y2="130" stroke="#6366f1" stroke-width="1.5" stroke-dasharray="4,3" marker-end="url(#arr)"/>
+                    <text x="355" y="120" text-anchor="middle" fill="#6b7694" font-size="8">/ /app /docs</text>
+
+                    <!-- Arrow 3: proxy -> containers -->
+                    <line x1="325" y1="180" x2="585" y2="230" stroke="#06b6d4" stroke-width="1.5" stroke-dasharray="4,3" marker-end="url(#arr2)"/>
+                    <text x="470" y="215" text-anchor="middle" fill="#6b7694" font-size="8">proxy to 172.18.0.x</text>
+
+                    <!-- Management App -->
+                    <rect x="387" y="80" width="145" height="140" rx="10" fill="#0f1629" stroke="#818cf8" stroke-width="1.5"/>
+                    <text x="460" y="108" text-anchor="middle" fill="#818cf8" font-size="9" font-weight="700">MGMT ENGINE</text>
+                    <text x="460" y="128" text-anchor="middle" fill="#fff" font-size="13" font-weight="800">index.ts</text>
+                    <text x="460" y="148" text-anchor="middle" fill="#818cf8" font-size="11" font-weight="700">Port 3000</text>
+                    <text x="460" y="166" text-anchor="middle" fill="#6b7694" font-size="9">REST API /container</text>
+                    <text x="460" y="181" text-anchor="middle" fill="#6b7694" font-size="9">REST API /image</text>
+                    <text x="460" y="196" text-anchor="middle" fill="#6b7694" font-size="9">EJS view rendering</text>
+
+                    <!-- Arrow 4: mgmt -> socket -->
+                    <line x1="460" y1="220" x2="460" y2="255" stroke="#818cf8" stroke-width="1.5" stroke-dasharray="4,3" marker-end="url(#arr)"/>
+
+                    <!-- Docker Socket -->
+                    <rect x="387" y="257" width="145" height="38" rx="8" fill="#0f1629" stroke="#10b981" stroke-width="1.5"/>
+                    <text x="460" y="278" text-anchor="middle" fill="#34d399" font-size="10" font-weight="700">/var/run/docker.sock</text>
+                    <text x="460" y="291" text-anchor="middle" fill="#6b7694" font-size="8">Docker Daemon API</text>
+
+                    <!-- Container cluster -->
+                    <rect x="585" y="195" width="145" height="100" rx="10" fill="#0f1629" stroke="#06b6d4" stroke-width="1.5"/>
+                    <text x="657" y="220" text-anchor="middle" fill="#06b6d4" font-size="10" font-weight="700">deploy-engine</text>
+                    <text x="657" y="235" text-anchor="middle" fill="#6b7694" font-size="8">bridge network</text>
+
+                    <rect x="598" y="247" width="55" height="24" rx="5" fill="rgba(6,182,212,0.1)" stroke="#06b6d4" stroke-width="1"/>
+                    <text x="625" y="263" text-anchor="middle" fill="#67e8f9" font-size="9" font-weight="600">web-demo</text>
+
+                    <rect x="662" y="247" width="55" height="24" rx="5" fill="rgba(6,182,212,0.1)" stroke="#06b6d4" stroke-width="1"/>
+                    <text x="689" y="263" text-anchor="middle" fill="#67e8f9" font-size="9" font-weight="600">postgres</text>
+
+                    <text x="657" y="285" text-anchor="middle" fill="#6b7694" font-size="8">172.18.0.x</text>
+                </svg>
+            </div>
+
+            <h2>Port Map</h2>
+            <table>
+                <thead><tr><th>Port</th><th>Service</th><th>Access</th></tr></thead>
+                <tbody>
+                    <tr><td><code>4000</code></td><td>Reverse Proxy (<code>proxy.ts</code>)</td><td>Public — browser</td></tr>
+                    <tr><td><code>3000</code></td><td>Management API (<code>index.ts</code>)</td><td>Internal only — proxy forwards</td></tr>
+                    <tr><td><code>docker.sock</code></td><td>Docker Daemon</td><td>Container-internal socket mount</td></tr>
+                </tbody>
+            </table>
+
+            <h2>Project Structure</h2>
+            <pre><code class="language-plaintext">nexadock/
+├── index.ts              # Management API server (port 3000)
+├── proxy.ts              # Reverse proxy server (port 4000)
+├── config/
+│   ├── app.config.ts     # Environment & app config
+│   ├── docker.config.ts  # Dockerode socket client
+│   └── swagger.config.ts # OpenAPI spec & Swagger UI setup
+├── routes/
+│   └── managementApp.route.ts
+├── controller/
+│   └── managementApp.controller.ts
+├── services/
+│   ├── container.service.ts
+│   ├── image.service.ts
+│   ├── network.service.ts
+│   └── volume.service.ts
+├── middleware/
+│   └── errorHandler.middleware.ts
+├── types/                # TypeScript interface definitions
+├── views/
+│   ├── landing.ejs       # Landing page
+│   ├── index.ejs         # Dashboard console
+│   ├── docs.ejs          # This documentation
+│   └── partials/
+│       └── header.ejs    # Shared navbar component
+├── public/
+│   ├── style.css         # Global CSS design system
+│   ├── app.js            # Client-side JS
+│   └── favicon.svg       # NexaDock logo
+└── tests/
+    └── managementApp.test.ts</code></pre>
+        </section>
+
+        <!-- ════════ CONTAINERS ════════ -->
+        <section class="doc-section" id="section-containers">
+            <div class="section-hero">
+                <h1>Container Management</h1>
+                <p>Full Docker container lifecycle — deploy, control, inspect, and destroy.</p>
+            </div>
+
+            <h2>Container Lifecycle</h2>
+            <div class="arch-box">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 660 80" width="100%" style="max-width:660px;font-family:Inter,sans-serif;">
+                    <defs><marker id="a" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L0,6 L8,3 z" fill="#6366f1"/></marker></defs>
+                    <rect x="5" y="20" width="90" height="40" rx="8" fill="rgba(99,102,241,0.1)" stroke="#6366f1" stroke-width="1.5"/>
+                    <text x="50" y="44" text-anchor="middle" fill="#a5b4fc" font-size="12" font-weight="700" font-family="Inter,sans-serif">Created</text>
+                    <line x1="97" y1="40" x2="132" y2="40" stroke="#6366f1" stroke-width="1.5" marker-end="url(#a)"/>
+                    <rect x="134" y="20" width="90" height="40" rx="8" fill="rgba(16,185,129,0.1)" stroke="#10b981" stroke-width="1.5"/>
+                    <text x="179" y="44" text-anchor="middle" fill="#34d399" font-size="12" font-weight="700" font-family="Inter,sans-serif">Running</text>
+                    <line x1="225" y1="40" x2="260" y2="40" stroke="#6366f1" stroke-width="1.5" marker-end="url(#a)"/>
+                    <rect x="262" y="20" width="90" height="40" rx="8" fill="rgba(245,158,11,0.1)" stroke="#f59e0b" stroke-width="1.5"/>
+                    <text x="307" y="44" text-anchor="middle" fill="#fbbf24" font-size="12" font-weight="700" font-family="Inter,sans-serif">Paused</text>
+                    <line x1="307" y1="60" x2="307" y2="74" stroke="#6366f1" stroke-width="1" stroke-dasharray="3,2"/>
+                    <line x1="307" y1="74" x2="179" y2="74" stroke="#6366f1" stroke-width="1" stroke-dasharray="3,2" marker-end="url(#a)"/>
+                    <line x1="353" y1="40" x2="388" y2="40" stroke="#6366f1" stroke-width="1.5" marker-end="url(#a)"/>
+                    <rect x="390" y="20" width="90" height="40" rx="8" fill="rgba(239,68,68,0.1)" stroke="#ef4444" stroke-width="1.5"/>
+                    <text x="435" y="44" text-anchor="middle" fill="#f87171" font-size="12" font-weight="700" font-family="Inter,sans-serif">Stopped</text>
+                    <line x1="481" y1="40" x2="516" y2="40" stroke="#6366f1" stroke-width="1.5" marker-end="url(#a)"/>
+                    <rect x="518" y="20" width="90" height="40" rx="8" fill="rgba(127,29,29,0.2)" stroke="#7f1d1d" stroke-width="1.5"/>
+                    <text x="563" y="44" text-anchor="middle" fill="#fca5a5" font-size="12" font-weight="700" font-family="Inter,sans-serif">Deleted</text>
+                </svg>
+            </div>
+
+            <h2>Deploy a Container</h2>
+            <div class="cmd">curl -X POST http://localhost:4000/container \
+  -H "Content-Type: application/json" \
+  -d '{"image":"nginx","tag":"alpine","containerName":"web-demo"}'<button class="copy-btn">Copy</button></div>
+
+            <h3>Request Body Schema</h3>
+            <table>
+                <thead><tr><th>Field</th><th>Type</th><th>Required</th><th>Description</th></tr></thead>
+                <tbody>
+                    <tr><td><code>image</code></td><td>string</td><td><span class="badge green">required</span></td><td>Docker Hub image name</td></tr>
+                    <tr><td><code>tag</code></td><td>string</td><td><span class="badge amber">optional</span></td><td>Image tag. Defaults to <code>latest</code></td></tr>
+                    <tr><td><code>containerName</code></td><td>string</td><td><span class="badge amber">optional</span></td><td>Unique container name for subdomain routing</td></tr>
+                    <tr><td><code>env</code></td><td>string[]</td><td><span class="badge amber">optional</span></td><td>Environment variables e.g. <code>["PORT=3000"]</code></td></tr>
+                    <tr><td><code>ports</code></td><td>object[]</td><td><span class="badge amber">optional</span></td><td>Port mappings <code>[{hostPort:"8080",containerPort:"80"}]</code></td></tr>
+                    <tr><td><code>autoRemove</code></td><td>boolean</td><td><span class="badge amber">optional</span></td><td>Auto-delete on stop. Default <code>false</code></td></tr>
+                </tbody>
+            </table>
+
+            <h2>List All Containers</h2>
+            <div class="cmd">curl http://localhost:4000/container<button class="copy-btn">Copy</button></div>
+
+            <h2>Inspect Container</h2>
+            <div class="cmd">curl http://localhost:4000/container/web-demo<button class="copy-btn">Copy</button></div>
+
+            <h2>Power Actions</h2>
+            <p>All power actions follow the pattern <code>POST /container/:id/:action</code></p>
+
+            <div class="cmd">curl -X POST http://localhost:4000/container/web-demo/start<button class="copy-btn">Copy</button></div>
+            <div class="cmd">curl -X POST http://localhost:4000/container/web-demo/stop<button class="copy-btn">Copy</button></div>
+            <div class="cmd">curl -X POST http://localhost:4000/container/web-demo/pause<button class="copy-btn">Copy</button></div>
+            <div class="cmd">curl -X POST http://localhost:4000/container/web-demo/unpause<button class="copy-btn">Copy</button></div>
+
+            <h2>Delete Container</h2>
+            <div class="cmd">curl -X DELETE "http://localhost:4000/container/web-demo?force=true"<button class="copy-btn">Copy</button></div>
+
+            <div class="callout warning">
+                <span class="callout-icon">⚠️</span>
+                <p><strong>Destructive.</strong> Deletion is permanent. The UI shows a confirmation dialog before executing. Use <code>force=true</code> to delete a running container without stopping it first.</p>
+            </div>
+        </section>
+
+        <!-- ════════ IMAGES ════════ -->
+        <section class="doc-section" id="section-images">
+            <div class="section-hero">
+                <h1>Images & Registry Hub</h1>
+                <p>Pull, inspect, search Docker Hub, and delete images — all through REST or the dashboard.</p>
+            </div>
+
+            <h2>Search Docker Hub (Auto-complete)</h2>
+            <p>Used by the dashboard's deploy modal for real-time image search with star counts and official image badges.</p>
+            <div class="cmd">curl "http://localhost:4000/image/search?q=postgres"<button class="copy-btn">Copy</button></div>
+
+            <pre><code class="language-json">{
+  "results": [
+    {
+      "name": "postgres",
+      "description": "The PostgreSQL object-relational database system",
+      "star_count": 14000,
+      "is_official": true,
+      "is_automated": false,
+      "pull_count": 1000000000
+    }
+  ]
+}</code></pre>
+
+            <h2>List Local Cached Images</h2>
+            <div class="cmd">curl http://localhost:4000/image<button class="copy-btn">Copy</button></div>
+
+            <h2>Inspect Full Image Metadata (A-Z)</h2>
+            <p>Returns architecture, OS, creation date, layer digests, size, environment variables, labels, exposed ports, entrypoint, and more.</p>
+            <div class="cmd">curl http://localhost:4000/image/inspect/nginx:alpine<button class="copy-btn">Copy</button></div>
+
+            <h2>Delete Local Image</h2>
+            <div class="cmd">curl -X DELETE "http://localhost:4000/image/nginx:alpine?force=true"<button class="copy-btn">Copy</button></div>
+
+            <div class="callout warning">
+                <span class="callout-icon">⚠️</span>
+                <p>An image cannot be deleted while any container (even stopped) is using it. Remove dependent containers first.</p>
+            </div>
+        </section>
+
+        <!-- ════════ PROXY ════════ -->
+        <section class="doc-section" id="section-proxy">
+            <div class="section-hero">
+                <h1>Dynamic Subdomain Reverse Proxy</h1>
+                <p>Every deployed container instantly gets a <code>name.localhost:4000</code> URL with zero configuration.</p>
+            </div>
+
+            <h2>How it Works</h2>
+            <pre><code class="language-plaintext">Request → http://web-demo.localhost:4000/api/users
+  ↓
+  proxy.ts parses Host header → "web-demo.localhost"
+  ↓
+  Extracts subdomain → "web-demo"
+  ↓
+  docker.getContainer("web-demo").inspect()
+  ↓
+  Finds container on "deploy-engine" bridge network
+  ↓
+  Resolves internal IP → 172.18.0.4
+  ↓
+  http-proxy-middleware → http://172.18.0.4:80/api/users
+  ↓
+  Response returned to browser</code></pre>
+
+            <h2>Root Domain Routes</h2>
+            <table>
+                <thead><tr><th>Path</th><th>Destination</th><th>Renders</th></tr></thead>
+                <tbody>
+                    <tr><td><code>/</code></td><td>Management App</td><td><code>landing.ejs</code></td></tr>
+                    <tr><td><code>/app</code></td><td>Management App</td><td><code>index.ejs</code> (Dashboard)</td></tr>
+                    <tr><td><code>/docs</code></td><td>Management App</td><td><code>docs.ejs</code> (This page)</td></tr>
+                    <tr><td><code>/api-docs</code></td><td>Management App</td><td>Swagger UI</td></tr>
+                    <tr><td><code>/container</code></td><td>Management App</td><td>REST API JSON</td></tr>
+                </tbody>
+            </table>
+
+            <h2>Accessing a Deployed Container</h2>
+            <div class="cmd">http://web-demo.localhost:4000<button class="copy-btn">Copy</button></div>
+
+            <div class="callout info">
+                <span class="callout-icon">💡</span>
+                <p>The container must be on the <code>deploy-engine</code> bridge network. All containers deployed via NexaDock are automatically attached.</p>
+            </div>
+
+            <h2>Attach an Existing Container to the Network</h2>
+            <div class="cmd">docker network connect deploy-engine my-existing-container<button class="copy-btn">Copy</button></div>
+
+            <p>Then immediately access it via:</p>
+            <div class="cmd">http://my-existing-container.localhost:4000<button class="copy-btn">Copy</button></div>
+
+            <h2>Port Auto-selection Logic</h2>
+            <p>The proxy selects the container's exposed port in this priority order:</p>
+            <ol style="color:var(--text);padding-left:20px;line-height:2;">
+                <li>Port <code>80/tcp</code> (standard HTTP)</li>
+                <li>Port <code>3000</code> or <code>8080</code></li>
+                <li>Any non-443 port</li>
+                <li>First exposed port</li>
+                <li>Falls back to <code>80</code></li>
+            </ol>
+        </section>
+
+        <!-- ════════ NETWORKS ════════ -->
+        <section class="doc-section" id="section-networks">
+            <div class="section-hero">
+                <h1>Networks</h1>
+                <p>Monitor, inspect, and manage Docker bridge networks from the dashboard or REST API.</p>
+            </div>
+
+            <h2>List All Networks</h2>
+            <div class="cmd">curl http://localhost:4000/network<button class="copy-btn">Copy</button></div>
+
+            <h2>Delete a Network</h2>
+            <div class="cmd">curl -X DELETE http://localhost:4000/network/my-custom-network<button class="copy-btn">Copy</button></div>
+
+            <div class="callout danger">
+                <span class="callout-icon">🚨</span>
+                <p><strong>Critical:</strong> Never delete the <code>deploy-engine</code> network — it is required for the subdomain proxy to resolve container IPs. Deleting it will break all subdomain routing until the network is recreated and containers reconnected.</p>
+            </div>
+
+            <h2>Recreate the deploy-engine Network</h2>
+            <p>If accidentally deleted, recreate it with:</p>
+            <div class="cmd">docker network create --driver bridge deploy-engine<button class="copy-btn">Copy</button></div>
+        </section>
+
+        <!-- ════════ VOLUMES ════════ -->
+        <section class="doc-section" id="section-volumes">
+            <div class="section-hero">
+                <h1>Storage Volumes</h1>
+                <p>Monitor persistent Docker volumes and safely clean up unused storage.</p>
+            </div>
+
+            <h2>List All Volumes</h2>
+            <div class="cmd">curl http://localhost:4000/volume<button class="copy-btn">Copy</button></div>
+
+            <h2>Delete a Volume</h2>
+            <div class="cmd">curl -X DELETE "http://localhost:4000/volume/my-data-volume?force=true"<button class="copy-btn">Copy</button></div>
+
+            <div class="callout warning">
+                <span class="callout-icon">⚠️</span>
+                <p>Volumes can only be deleted when they are not mounted by any container (running or stopped). Stop and remove dependent containers first. Volume deletion is <strong>permanent</strong> — all data inside will be lost.</p>
+            </div>
+        </section>
+
+        <!-- ════════ REST API ════════ -->
+        <section class="doc-section" id="section-rest-api">
+            <div class="section-hero">
+                <h1>REST API Reference</h1>
+                <p>Complete endpoint reference. See <a href="/api-docs" target="_blank">Swagger UI</a> for interactive testing.</p>
+            </div>
+
+            <h2>Containers</h2>
+            <table>
+                <thead><tr><th>Method</th><th>Endpoint</th><th>Description</th></tr></thead>
+                <tbody>
+                    <tr><td><span class="badge blue">GET</span></td><td><code>/container</code></td><td>List all containers on deploy-engine network</td></tr>
+                    <tr><td><span class="badge green">POST</span></td><td><code>/container</code></td><td>Deploy & start a new container</td></tr>
+                    <tr><td><span class="badge blue">GET</span></td><td><code>/container/:id</code></td><td>Inspect container details</td></tr>
+                    <tr><td><span class="badge green">POST</span></td><td><code>/container/:id/start</code></td><td>Start stopped container</td></tr>
+                    <tr><td><span class="badge green">POST</span></td><td><code>/container/:id/stop</code></td><td>Stop running container</td></tr>
+                    <tr><td><span class="badge green">POST</span></td><td><code>/container/:id/pause</code></td><td>Pause running container</td></tr>
+                    <tr><td><span class="badge green">POST</span></td><td><code>/container/:id/unpause</code></td><td>Resume paused container</td></tr>
+                    <tr><td><span class="badge red">DELETE</span></td><td><code>/container/:id</code></td><td>Force delete container</td></tr>
+                </tbody>
+            </table>
+
+            <h2>Images</h2>
+            <table>
+                <thead><tr><th>Method</th><th>Endpoint</th><th>Description</th></tr></thead>
+                <tbody>
+                    <tr><td><span class="badge blue">GET</span></td><td><code>/image</code></td><td>List local cached images</td></tr>
+                    <tr><td><span class="badge blue">GET</span></td><td><code>/image/search?q=</code></td><td>Search Docker Hub</td></tr>
+                    <tr><td><span class="badge blue">GET</span></td><td><code>/image/inspect/:id</code></td><td>Full A-Z image metadata</td></tr>
+                    <tr><td><span class="badge red">DELETE</span></td><td><code>/image/:id</code></td><td>Delete local image</td></tr>
+                </tbody>
+            </table>
+
+            <h2>Networks & Volumes</h2>
+            <table>
+                <thead><tr><th>Method</th><th>Endpoint</th><th>Description</th></tr></thead>
+                <tbody>
+                    <tr><td><span class="badge blue">GET</span></td><td><code>/network</code></td><td>List all Docker networks</td></tr>
+                    <tr><td><span class="badge red">DELETE</span></td><td><code>/network/:id</code></td><td>Delete a network</td></tr>
+                    <tr><td><span class="badge blue">GET</span></td><td><code>/volume</code></td><td>List all storage volumes</td></tr>
+                    <tr><td><span class="badge red">DELETE</span></td><td><code>/volume/:id</code></td><td>Delete a volume</td></tr>
+                </tbody>
+            </table>
+        </section>
+
+        <!-- ════════ CLI ════════ -->
+        <section class="doc-section" id="section-cli">
+            <div class="section-hero">
+                <h1>CLI Commands</h1>
+                <p>All essential shell commands — click any block to copy.</p>
+            </div>
+
+            <h2>Docker Compose</h2>
+            <div class="cmd">docker compose up -d --build<button class="copy-btn">Copy</button></div>
+            <div class="cmd">docker compose down<button class="copy-btn">Copy</button></div>
+            <div class="cmd">docker compose logs -f dockpoly-engine<button class="copy-btn">Copy</button></div>
+
+            <h2>Container Operations</h2>
+            <div class="cmd">curl -X POST http://localhost:4000/container \
+  -H "Content-Type: application/json" \
+  -d '{"image":"nginx","tag":"alpine","containerName":"web-demo"}'<button class="copy-btn">Copy</button></div>
+            <div class="cmd">curl http://localhost:4000/container<button class="copy-btn">Copy</button></div>
+            <div class="cmd">curl -X POST http://localhost:4000/container/web-demo/stop<button class="copy-btn">Copy</button></div>
+            <div class="cmd">curl -X DELETE "http://localhost:4000/container/web-demo?force=true"<button class="copy-btn">Copy</button></div>
+
+            <h2>Image Operations</h2>
+            <div class="cmd">curl "http://localhost:4000/image/search?q=postgres"<button class="copy-btn">Copy</button></div>
+            <div class="cmd">curl http://localhost:4000/image<button class="copy-btn">Copy</button></div>
+            <div class="cmd">curl http://localhost:4000/image/inspect/nginx:alpine<button class="copy-btn">Copy</button></div>
+            <div class="cmd">curl -X DELETE "http://localhost:4000/image/nginx:alpine?force=true"<button class="copy-btn">Copy</button></div>
+
+            <h2>Network & Volume</h2>
+            <div class="cmd">curl http://localhost:4000/network<button class="copy-btn">Copy</button></div>
+            <div class="cmd">curl http://localhost:4000/volume<button class="copy-btn">Copy</button></div>
+            <div class="cmd">docker network connect deploy-engine my-container<button class="copy-btn">Copy</button></div>
+        </section>
+
+        <!-- ════════ TESTING ════════ -->
+        <section class="doc-section" id="section-testing">
+            <div class="section-hero">
+                <h1>Testing & Validation</h1>
+                <p>Unit and integration test suite with 100% service-layer coverage.</p>
+            </div>
+
+            <h2>Run Tests</h2>
+            <div class="cmd">bun test<button class="copy-btn">Copy</button></div>
+
+            <h3>Expected Output</h3>
+            <pre><code class="language-plaintext">bun test v1.3.14
+
+tests/managementApp.test.ts:
+(pass) should list Docker containers active on internal network
+(pass) should list local cached Docker images
+(pass) should list Docker networks including deploy-engine bridge
+(pass) should list Docker storage volumes
+(pass) should search Docker Hub for official image auto-complete
+
+ 5 pass
+ 0 fail
+ 45 expect() calls
+Ran 5 tests across 1 file. [2.23s]</code></pre>
+
+            <h2>TypeScript Type Check</h2>
+            <div class="cmd">bun x tsc --noEmit<button class="copy-btn">Copy</button></div>
+            <p>Zero TypeScript errors expected on a clean build.</p>
+
+            <div class="callout success">
+                <span class="callout-icon">✅</span>
+                <p>Always run both <code>bun test</code> and <code>bun x tsc --noEmit</code> before pushing to production. Both should pass with zero failures or errors.</p>
+            </div>
+        </section>
+
+        <!-- ════════ ENV ════════ -->
+        <section class="doc-section" id="section-env">
+            <div class="section-hero">
+                <h1>.env Reference</h1>
+                <p>Complete guide to every environment variable — what it does, when to change it, and whether to commit it.</p>
+            </div>
+
+            <h2>Should You Commit <code>.env</code>?</h2>
+
+            <div class="callout danger">
+                <span class="callout-icon">🚫</span>
+                <p><strong>Never commit <code>.env</code> to git for production deployments.</strong> It may contain secrets (API keys, DB passwords, tokens). Add <code>.env</code> to <code>.gitignore</code> immediately.</p>
+            </div>
+
+            <table>
+                <thead><tr><th>Scenario</th><th>Use <code>.env</code>?</th><th>Reason</th></tr></thead>
+                <tbody>
+                    <tr><td>Local development</td><td><span class="badge green">✅ Yes</span></td><td>Convenient for local overrides. Never leave the machine.</td></tr>
+                    <tr><td>Docker Compose local</td><td><span class="badge green">✅ Yes</span></td><td><code>docker-compose.yml</code> reads it via <code>env_file: .env</code>.</td></tr>
+                    <tr><td>Production / CI/CD</td><td><span class="badge red">❌ No</span></td><td>Inject variables via platform secrets or CI environment variables instead.</td></tr>
+                    <tr><td>Git repository</td><td><span class="badge red">❌ Never</span></td><td>Exposes all secrets publicly. Use <code>.env.example</code> instead.</td></tr>
+                    <tr><td>Docker image build</td><td><span class="badge amber">⚠️ Caution</span></td><td>Don't bake secrets into layers. Use runtime injection.</td></tr>
+                </tbody>
+            </table>
+
+            <h2>Safe Practice — <code>.env.example</code></h2>
+            <p>Commit a <strong>template file</strong> with no real values. Other developers copy it and fill in their own values:</p>
+            <div class="cmd">cp .env.example .env<button class="copy-btn">Copy</button></div>
+
+            <pre><code class="language-bash"># .env.example — Safe to commit. Contains no real secrets.
+PORT=4000
+MANAGEMENT_PORT=3000
+MANAGEMENT_HOST=127.0.0.1
+DOMAIN=localhost
+DOCKER_NETWORK=deploy-engine
+NODE_ENV=production</code></pre>
+
+            <h2>Current <code>.env</code> — All Variables</h2>
+
+            <table>
+                <thead><tr><th>Variable</th><th>Default</th><th>Required</th><th>Description</th></tr></thead>
+                <tbody>
+                    <tr>
+                        <td><code>PORT</code></td>
+                        <td><code>4000</code></td>
+                        <td><span class="badge amber">optional</span></td>
+                        <td>The public-facing port for the <strong>reverse proxy server</strong> (<code>proxy.ts</code>). This is the port you open in your browser. Exposed by Docker Compose as <code>HOST:CONTAINER</code>.</td>
+                    </tr>
+                    <tr>
+                        <td><code>MANAGEMENT_PORT</code></td>
+                        <td><code>3000</code></td>
+                        <td><span class="badge amber">optional</span></td>
+                        <td>Internal port for the <strong>management API server</strong> (<code>index.ts</code>). Never exposed to the host — only the proxy communicates with it.</td>
+                    </tr>
+                    <tr>
+                        <td><code>MANAGEMENT_HOST</code></td>
+                        <td><code>127.0.0.1</code></td>
+                        <td><span class="badge amber">optional</span></td>
+                        <td>The hostname the proxy uses to reach the management server. Keep as <code>127.0.0.1</code> (loopback). Only change if running as separate containers.</td>
+                    </tr>
+                    <tr>
+                        <td><code>DOMAIN</code></td>
+                        <td><code>localhost</code></td>
+                        <td><span class="badge amber">optional</span></td>
+                        <td>The root domain used by the proxy to distinguish direct requests from subdomain requests. Change to <code>yourdomain.com</code> when deploying publicly. Subdomain URLs become <code>[container].yourdomain.com:PORT</code>.</td>
+                    </tr>
+                    <tr>
+                        <td><code>DOCKER_NETWORK</code></td>
+                        <td><code>deploy-engine</code></td>
+                        <td><span class="badge amber">optional</span></td>
+                        <td>Name of the Docker bridge network used for container-to-container routing and subdomain IP resolution. Must match the network name in <code>docker-compose.yml</code>. Changing this requires recreating the network.</td>
+                    </tr>
+                    <tr>
+                        <td><code>NODE_ENV</code></td>
+                        <td><code>production</code></td>
+                        <td><span class="badge amber">optional</span></td>
+                        <td>Runtime environment. Set to <code>development</code> locally for verbose logging. Set to <code>production</code> for Docker deployments.</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <h2>How Variables Are Loaded</h2>
+            <p>NexaDock reads environment variables directly from <code>process.env</code> via <code>config/app.config.ts</code>. All variables have <strong>hardcoded fallback defaults</strong>, meaning the app works even without any <code>.env</code> file:</p>
+
+            <pre><code class="language-typescript">// config/app.config.ts
+export const config = {
+    port:           Number(process.env.PORT)            || 4000,
+    managementPort: Number(process.env.MANAGEMENT_PORT) || 3000,
+    managementHost: process.env.MANAGEMENT_HOST         || '127.0.0.1',
+    domain:         process.env.DOMAIN                  || 'localhost',
+    dockerNetwork:  process.env.DOCKER_NETWORK          || 'deploy-engine',
+    nodeEnv:        process.env.NODE_ENV                || 'production',
+};</code></pre>
+
+            <h2>Docker Compose Injection</h2>
+            <p><code>docker-compose.yml</code> reads <code>.env</code> via <code>env_file</code> and also injects variables individually with fallback syntax:</p>
+
+            <pre><code class="language-yaml">services:
+  app:
+    env_file:
+      - .env          # &lt;-- reads the .env file
+    environment:
+      - PORT=${PORT:-4000}                     # fallback if not in .env
+      - MANAGEMENT_PORT=${MANAGEMENT_PORT:-3000}
+      - MANAGEMENT_HOST=${MANAGEMENT_HOST:-127.0.0.1}
+      - DOMAIN=${DOMAIN:-localhost}
+      - DOCKER_NETWORK=${DOCKER_NETWORK:-deploy-engine}
+      - NODE_ENV=${NODE_ENV:-production}</code></pre>
+
+            <h2>Adding <code>.env</code> to <code>.gitignore</code></h2>
+            <div class="cmd">echo ".env" >> .gitignore<button class="copy-btn">Copy</button></div>
+
+            <div class="callout success">
+                <span class="callout-icon">✅</span>
+                <p><strong>Summary:</strong> Use <code>.env</code> locally and with Docker Compose. Never commit it. Commit <code>.env.example</code> instead. In production CI/CD, inject variables as platform secrets or Docker secrets — never as files in the image.</p>
+            </div>
+        </section>
+
+        <!-- ════════ CONFIG ════════ -->
+        <section class="doc-section" id="section-config">
+            <div class="section-hero">
+                <h1>Configuration</h1>
+                <p>All environment variables and configuration options for NexaDock.</p>
+            </div>
+
+            <h2>Environment Variables</h2>
+            <table>
+                <thead><tr><th>Variable</th><th>Default</th><th>Description</th></tr></thead>
+                <tbody>
+                    <tr><td><code>PORT</code></td><td><code>4000</code></td><td>Public reverse proxy port</td></tr>
+                    <tr><td><code>MANAGEMENT_PORT</code></td><td><code>3000</code></td><td>Internal management API port</td></tr>
+                    <tr><td><code>MANAGEMENT_HOST</code></td><td><code>127.0.0.1</code></td><td>Internal management API host</td></tr>
+                    <tr><td><code>DOCKER_NETWORK</code></td><td><code>deploy-engine</code></td><td>Bridge network for subdomain routing</td></tr>
+                    <tr><td><code>DOMAIN</code></td><td><code>localhost</code></td><td>Root domain for proxy routing</td></tr>
+                </tbody>
+            </table>
+
+            <h2>docker-compose.yml</h2>
+            <pre><code class="language-yaml">services:
+  app:
+    build: .
+    container_name: dockpoly-engine
+    ports:
+      - "4000:4000"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    networks:
+      - deploy-engine
+
+networks:
+  deploy-engine:
+    driver: bridge
+    name: deploy-engine</code></pre>
+
+            <div class="callout info">
+                <span class="callout-icon">💡</span>
+                <p>The Docker socket mount (<code>/var/run/docker.sock</code>) is what allows NexaDock to control the host Docker daemon from inside the container. This is required for all container management functionality.</p>
+            </div>
+        </section>
+
+    </main>
+</div>
+
+<!-- Highlight.js -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script>
+hljs.highlightAll();
+
+// ── Sidebar navigation ──
+const navItems = document.querySelectorAll('.nav-item[data-section]');
+const sections = document.querySelectorAll('.doc-section');
+const sidebar = document.getElementById('sidebar');
+
+navItems.forEach(item => {
+    item.addEventListener('click', () => {
+        const target = item.dataset.section;
+
+        navItems.forEach(n => n.classList.remove('active'));
+        item.classList.add('active');
+
+        sections.forEach(s => s.classList.remove('active'));
+        const targetSection = document.getElementById('section-' + target);
+        if (targetSection) { targetSection.classList.add('active'); }
+
+        // Render prev/next nav
+        renderPageNav(target);
+
+        // Close mobile sidebar
+        sidebar.classList.remove('open');
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    });
+});
+
+// ── Page Navigation System ────────────────────────────────
+const SECTIONS = [
+    { id: 'overview',      label: 'Overview',            icon: '🏠' },
+    { id: 'quickstart',    label: 'Quick Start',          icon: '⚡' },
+    { id: 'architecture',  label: 'Architecture',         icon: '🏗️' },
+    { id: 'containers',    label: 'Containers',           icon: '📦' },
+    { id: 'images',        label: 'Images & Registry',    icon: '🖼️' },
+    { id: 'proxy',         label: 'Subdomain Proxy',      icon: '🌐' },
+    { id: 'networks',      label: 'Networks',             icon: '🔌' },
+    { id: 'volumes',       label: 'Volumes',              icon: '💾' },
+    { id: 'rest-api',      label: 'REST API Reference',   icon: '↕️' },
+    { id: 'cli',           label: 'CLI Commands',         icon: '💻' },
+    { id: 'testing',       label: 'Testing & Validation', icon: '✅' },
+    { id: 'env',           label: '.env Reference',       icon: '🛡️' },
+    { id: 'config',        label: 'Configuration',        icon: '⚙️' },
+];
+
+function renderPageNav(currentId) {
+    const idx = SECTIONS.findIndex(s => s.id === currentId);
+    if (idx === -1) return;
+
+    const prev = idx > 0 ? SECTIONS[idx - 1] : null;
+    const next = idx < SECTIONS.length - 1 ? SECTIONS[idx + 1] : null;
+
+    // Remove old nav footer from this section
+    const section = document.getElementById('section-' + currentId);
+    if (!section) return;
+    section.querySelectorAll('.page-nav-footer').forEach(el => el.remove());
+
+    const footer = document.createElement('div');
+    footer.className = 'page-nav-footer';
+
+    if (prev) {
+        footer.innerHTML += `
+            <div class="page-nav-card prev" data-section="${prev.id}" role="button">
+                <div class="page-nav-arrow">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
+                </div>
+                <div class="page-nav-text">
+                    <span class="page-nav-label">Previous</span>
+                    <span class="page-nav-name">${prev.icon} ${prev.label}</span>
+                </div>
+            </div>
+        `;
+    } else {
+        footer.innerHTML += `<div class="page-nav-spacer"></div>`;
+    }
+
+    if (next) {
+        footer.innerHTML += `
+            <div class="page-nav-card next" data-section="${next.id}" role="button">
+                <div class="page-nav-text">
+                    <span class="page-nav-label">Next</span>
+                    <span class="page-nav-name">${next.icon} ${next.label}</span>
+                </div>
+                <div class="page-nav-arrow">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
+                </div>
+            </div>
+        `;
+    }
+
+    section.appendChild(footer);
+
+    // Wire click events
+    footer.querySelectorAll('.page-nav-card[data-section]').forEach(card => {
+        card.addEventListener('click', () => {
+            const targetId = card.dataset.section;
+            const targetNavItem = document.querySelector(`.nav-item[data-section="${targetId}"]`);
+            if (targetNavItem) targetNavItem.click();
+        });
+    });
+}
+
+// Init nav on first section
+renderPageNav('overview');
+
+// ── Mobile sidebar toggle ──
+document.getElementById('sidebarToggle').addEventListener('click', () => {
+    sidebar.classList.toggle('open');
+});
+
+// Close sidebar on outside click (mobile)
+document.addEventListener('click', (e) => {
+    if (!sidebar.contains(e.target) && !e.target.closest('#sidebarToggle')) {
+        sidebar.classList.remove('open');
+    }
+});
+
+// ── Click-to-copy for all .copy-btn inside .cmd and pre ──
+document.addEventListener('click', (e) => {
+    const btn = e.target.closest('.copy-btn');
+    if (!btn) return;
+
+    // Find text: either the cmd block text or the code block
+    let text = '';
+    const cmdBlock = btn.closest('.cmd');
+    const preBlock = btn.closest('pre');
+
+    if (cmdBlock) {
+        // Get text excluding the button text
+        text = Array.from(cmdBlock.childNodes)
+            .filter(n => n.nodeType === Node.TEXT_NODE)
+            .map(n => n.textContent)
+            .join('') + (cmdBlock.querySelector('.cmd-text')?.textContent || '');
+
+        // Simpler approach: clone, remove btn, get text
+        const clone = cmdBlock.cloneNode(true);
+        clone.querySelector('.copy-btn')?.remove();
+        text = clone.textContent.trim();
+    } else if (preBlock) {
+        text = preBlock.querySelector('code')?.textContent?.trim() || '';
+    }
+
+    if (!text) return;
+
+    navigator.clipboard.writeText(text).then(() => {
+        const orig = btn.textContent;
+        btn.textContent = '✓ Copied!';
+        btn.classList.add('copied');
+        setTimeout(() => {
+            btn.textContent = orig;
+            btn.classList.remove('copied');
+        }, 1800);
+    }).catch(() => {
+        // Fallback
+        const ta = document.createElement('textarea');
+        ta.value = text;
+        document.body.appendChild(ta);
+        ta.select();
+        document.execCommand('copy');
+        ta.remove();
+        btn.textContent = '✓ Copied!';
+        btn.classList.add('copied');
+        setTimeout(() => {
+            btn.textContent = 'Copy';
+            btn.classList.remove('copied');
+        }, 1800);
+    });
+});
+
+// Add copy buttons to all <pre> blocks
+document.querySelectorAll('pre').forEach(pre => {
+    const btn = document.createElement('button');
+    btn.className = 'copy-btn';
+    btn.textContent = 'Copy';
+    pre.appendChild(btn);
+});
+
+// Initialise all declarative .pkg-tabs elements
+if (window.PkgTabs) { PkgTabs.init(); }
+
+// Add copy buttons to all <pre> blocks (skip pkg-tabs ones)
+document.querySelectorAll('pre').forEach(pre => {
+    if (!pre.querySelector('.copy-btn')) {
+        const btn = document.createElement('button');
+        btn.className = 'copy-btn';
+        btn.textContent = 'Copy';
+        pre.appendChild(btn);
+    }
+});
+</script>
+</body>
+</html>

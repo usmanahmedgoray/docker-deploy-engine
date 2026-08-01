@@ -28,6 +28,10 @@ managementApp.get("/app", (req: Request, res: Response) => {
     res.render("index", { config });
 });
 
+managementApp.get("/docs", (req: Request, res: Response) => {
+    res.render("docs", { config });
+});
+
 managementApp.use((req: Request, res: Response) => {
     res.status(404).json({ message: "Route Not Found" });
 });
