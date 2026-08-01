@@ -1,5 +1,6 @@
 import Docker from "dockerode";
 import { docker } from "../config/docker.config";
+import { config } from "../config/app.config";
 
 export interface CreateContainerOptions {
     image: string;
@@ -7,7 +8,7 @@ export interface CreateContainerOptions {
     containerName?: string;
     env?: string[];
     cmd?: string[];
-    ports?: Array<{ hostPort: string; containerPort: string }>;
+    ports?: Array<{ containerPort: string }>;
     autoRemove?: boolean;
 }
 
@@ -17,6 +18,8 @@ export interface ContainerResult {
     image: string;
     status: string;
     created: string;
+    internalIp?: string;
+    url?: string;
 }
 
 export const isImageExist = async (image: string, tag: string = "latest"): Promise<boolean> => {
@@ -32,6 +35,25 @@ export const isImageExist = async (image: string, tag: string = "latest"): Promi
     }
 };
 
+/**
+ * Ensures a custom Docker network exists so containers can communicate internally.
+ */
+export const ensureDockerNetwork = async (networkName: string = config.dockerNetwork): Promise<void> => {
+    try {
+        const networks = await docker.listNetworks();
+        const exists = networks.some((net) => net.Name === networkName);
+
+        if (!exists) {
+            await docker.createNetwork({
+                Name: networkName,
+                Driver: "bridge",
+            });
+            console.log(`Created Docker network '${networkName}'`);
+        }
+    } catch (error: any) {
+        console.error(`Error ensuring Docker network '${networkName}':`, error);
+    }
+};
 
 export const pullImage = async (image: string, tag: string = "latest"): Promise<{ message: string; pulled: boolean }> => {
     const fullImageName = `${image}:${tag}`;
@@ -62,19 +84,20 @@ export const pullImage = async (image: string, tag: string = "latest"): Promise<
 export const createContainer = async (options: CreateContainerOptions): Promise<ContainerResult> => {
     const { image, tag = "latest", containerName, env, cmd, ports, autoRemove = true } = options;
     const fullImageName = `${image}:${tag}`;
+    const NETWORK_NAME = config.dockerNetwork;
 
     // 1. Ensure image is available locally
     await pullImage(image, tag);
 
-    // 2. Prepare Port Bindings if specified
-    const PortBindings: Record<string, Array<{ HostPort: string }>> = {};
-    const ExposedPorts: Record<string, {}> = {};
+    // 2. Ensure Docker internal network exists
+    await ensureDockerNetwork(NETWORK_NAME);
 
+    // 3. Prepare exposed internal ports (without host port bindings)
+    const ExposedPorts: Record<string, {}> = {};
     if (ports && ports.length > 0) {
         for (const p of ports) {
-            const key = `${p.containerPort}/tcp`;
+            const key = p.containerPort.includes("/") ? p.containerPort : `${p.containerPort}/tcp`;
             ExposedPorts[key] = {};
-            PortBindings[key] = [{ HostPort: p.hostPort }];
         }
     }
 
@@ -85,7 +108,7 @@ export const createContainer = async (options: CreateContainerOptions): Promise<
         Cmd: cmd,
         ExposedPorts,
         HostConfig: {
-            PortBindings,
+            NetworkMode: NETWORK_NAME,
             AutoRemove: autoRemove,
             RestartPolicy: { Name: autoRemove ? "no" : "unless-stopped" },
         },
@@ -94,21 +117,26 @@ export const createContainer = async (options: CreateContainerOptions): Promise<
     let container: Docker.Container | null = null;
 
     try {
-        // 3. Create Container
+        // 4. Create Container
         container = await docker.createContainer(createOptions);
 
-        // 4. Start Container
+        // 5. Start Container
         await container.start();
 
-        // 5. Inspect for summary output
+        // 6. Inspect for summary output & internal network settings
         const inspectData = await container.inspect();
+        const cleanedName = inspectData.Name.replace(/^\//, "");
+        const networkSettings = inspectData.NetworkSettings.Networks[NETWORK_NAME];
+        const internalIp: string = (networkSettings as any)?.IPAddress || (inspectData.NetworkSettings as any)?.IPAddress || "";
 
         return {
             id: container.id,
-            name: inspectData.Name.replace(/^\//, ""),
+            name: cleanedName,
             image: fullImageName,
             status: inspectData.State.Status,
             created: inspectData.Created,
+            internalIp,
+            url: `http://${cleanedName}.${config.domain}:${config.port}`,
         };
     } catch (error: any) {
         console.error("Failed during container creation/startup:", error);
@@ -211,4 +239,132 @@ export const deleteContainersByImage = async (
         deletedContainers,
     };
 };
+
+/**
+ * Inspects a single container by ID or Name to retrieve status, environment variables, and connection info.
+ */
+export const getContainerByIdOrName = async (identifier: string) => {
+    if (!identifier) {
+        throw new Error("Container ID or Name is required");
+    }
+
+    const container = docker.getContainer(identifier);
+
+    try {
+        const inspectData = await container.inspect();
+        const cleanedName = inspectData.Name.replace(/^\//, "");
+        const networkSettings = inspectData.NetworkSettings.Networks[config.dockerNetwork];
+        const internalIp: string = (networkSettings as any)?.IPAddress || (inspectData.NetworkSettings as any)?.IPAddress || "";
+
+        return {
+            id: inspectData.Id,
+            name: cleanedName,
+            image: inspectData.Config.Image,
+            status: inspectData.State.Status,
+            running: inspectData.State.Running,
+            created: inspectData.Created,
+            internalIp,
+            url: `http://${cleanedName}.${config.domain}:${config.port}`,
+            env: inspectData.Config.Env,
+            exposedPorts: Object.keys(inspectData.Config.ExposedPorts || {}),
+        };
+    } catch (error: any) {
+        if (error.statusCode === 404) {
+            const notFoundErr: any = new Error(`Container '${identifier}' not found`);
+            notFoundErr.statusCode = 404;
+            throw notFoundErr;
+        }
+        throw error;
+    }
+};
+
+/**
+ * Lists all Docker containers managed by the service on deploy-engine network.
+ */
+export const listContainers = async () => {
+    const rawContainers = await docker.listContainers({ all: true });
+
+    return rawContainers.map((c) => {
+        const cleanedName = c.Names && c.Names[0] ? c.Names[0].replace(/^\//, "") : c.Id.substring(0, 12);
+        const networkSettings = c.NetworkSettings?.Networks?.[config.dockerNetwork];
+        const internalIp = networkSettings?.IPAddress || "";
+
+        return {
+            id: c.Id,
+            name: cleanedName,
+            image: c.Image,
+            state: c.State,
+            status: c.Status,
+            created: c.Created,
+            internalIp,
+            url: `http://${cleanedName}.${config.domain}:${config.port}`,
+            ports: c.Ports || [],
+        };
+    });
+};
+
+/**
+ * Power lifecycle controls (start, stop, pause, unpause)
+ */
+export const startContainerService = async (identifier: string) => {
+    const container = docker.getContainer(identifier);
+    await container.start();
+    return { id: identifier, status: "started" };
+};
+
+export const stopContainerService = async (identifier: string) => {
+    const container = docker.getContainer(identifier);
+    await container.stop();
+    return { id: identifier, status: "stopped" };
+};
+
+export const pauseContainerService = async (identifier: string) => {
+    const container = docker.getContainer(identifier);
+    await container.pause();
+    return { id: identifier, status: "paused" };
+};
+
+export const unpauseContainerService = async (identifier: string) => {
+    const container = docker.getContainer(identifier);
+    await container.unpause();
+    return { id: identifier, status: "unpaused" };
+};
+
+/**
+ * Lists all Docker images on the host
+ */
+export const listImages = async () => {
+    const images = await docker.listImages();
+    return images.map((img) => ({
+        id: img.Id.replace(/^sha256:/, "").substring(0, 12),
+        fullId: img.Id,
+        repoTags: img.RepoTags || ["<none>:<none>"],
+        sizeBytes: img.Size,
+        sizeMb: (img.Size / (1024 * 1024)).toFixed(2) + " MB",
+        created: img.Created,
+    }));
+};
+
+/**
+ * Deletes a single Docker image by ID or Tag.
+ */
+export const deleteImageByIdOrTag = async (identifier: string, force: boolean = false) => {
+    if (!identifier) {
+        throw new Error("Image ID or Tag is required");
+    }
+
+    const imageRef = docker.getImage(identifier);
+    try {
+        await imageRef.remove({ force });
+        return { image: identifier, removed: true };
+    } catch (error: any) {
+        if (error.statusCode === 404) {
+            const notFoundErr: any = new Error(`Image '${identifier}' not found`);
+            notFoundErr.statusCode = 404;
+            throw notFoundErr;
+        }
+        throw error;
+    }
+};
+
 

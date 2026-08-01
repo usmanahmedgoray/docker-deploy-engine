@@ -1,31 +1,38 @@
-import express, { type Request, type Response } from "express";
+import path from "path";
+import express, { type Request, type Response, type NextFunction } from "express";
 import { managementAppRoutes } from "./routes/managementApp.route";
+import { proxy } from "./proxy";
+import { config } from "./config/app.config";
 
-// Server for management App
+// 1. Management API Server (internal port)
 const managementApp = express();
 
-// middleware for management App
 managementApp.use(express.json());
-
-// Using routes for management App
+managementApp.use(express.static(path.join(process.cwd(), "public")));
 managementApp.use("/", managementAppRoutes);
 
-// Routes for management App
 managementApp.get("/", (req: Request, res: Response) => {
-    res.send("Hello World!");
+    res.sendFile(path.join(process.cwd(), "public", "index.html"));
 });
 
-// Handling 404 
 managementApp.use((req: Request, res: Response) => {
     res.status(404).json({ message: "Not Found" });
 });
 
-// Handling 500
-managementApp.use((err: Error, req: Request, res: Response) => {
+managementApp.use((err: Error, req: Request, res: Response, next: NextFunction) => {
     console.error(err.stack);
     res.status(500).json({ message: "Internal Server Error" });
 });
 
-managementApp.listen(3000, () => {
-    console.log("Server is running on port 3000");
+managementApp.listen(config.managementPort, "0.0.0.0", () => {
+    console.log(`Management API server is running internally on 0.0.0.0:${config.managementPort}`);
+});
+
+// 2. Reverse Proxy Server (public entrypoint port)
+const proxyApp = express();
+
+proxyApp.use("/", proxy);
+
+proxyApp.listen(config.port, "0.0.0.0", () => {
+    console.log(`Reverse Proxy server is running publicly on 0.0.0.0:${config.port}`);
 });

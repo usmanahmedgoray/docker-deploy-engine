@@ -76,13 +76,15 @@ Located in [`services/managementApp.services.ts`](file:///d:/Personal/Docker/Doc
 
 #### `CreateContainerOptions`
 ```typescript
+#### `CreateContainerOptions`
+```typescript
 export interface CreateContainerOptions {
     image: string;
     tag?: string;
     containerName?: string;
     env?: string[];
     cmd?: string[];
-    ports?: Array<{ hostPort: string; containerPort: string }>;
+    ports?: Array<{ containerPort: string }>;
     autoRemove?: boolean;
 }
 ```
@@ -95,6 +97,8 @@ export interface ContainerResult {
     image: string;
     status: string;
     created: string;
+    internalIp?: string;
+    url?: string;
 }
 ```
 
@@ -104,24 +108,28 @@ export interface ContainerResult {
    - Inspects local Docker image cache for `${image}:${tag}`.
    - Returns `true` if available locally, `false` on HTTP 404.
 
-2. **`pullImage(image: string, tag?: string): Promise<{ message: string; pulled: boolean }>`**
+2. **`ensureDockerNetwork(networkName?: string): Promise<void>`**
+   - Checks if custom internal bridge network (`deploy-engine`) exists, creating it automatically if missing.
+
+3. **`pullImage(image: string, tag?: string): Promise<{ message: string; pulled: boolean }>`**
    - Checks local image existence first.
    - If missing, triggers `docker.pull(`${image}:${tag}`)`.
    - Utilizes `docker.modem.followProgress` to stream and complete image download.
 
-3. **`createContainer(options: CreateContainerOptions): Promise<ContainerResult>`**
+4. **`createContainer(options: CreateContainerOptions): Promise<ContainerResult>`**
    - Guarantees local image availability via `pullImage`.
-   - Maps exposed ports (`ExposedPorts` and `HostConfig.PortBindings`).
-   - Configures container parameters including environment variables (`Env`), command overrides (`Cmd`), `AutoRemove`, and `RestartPolicy` (`unless-stopped` if `autoRemove` is `false`).
-   - Creates and starts container instance.
+   - Ensures `deploy-engine` internal bridge network exists.
+   - Configures internal container ports (`ExposedPorts`) on the Docker internal network without host port bindings (`PortBindings`).
+   - Creates and starts container instance attached to `deploy-engine`.
+   - Inspects container to extract internal IP (`internalIp`) and access URL (`http://<containerName>.localhost:4000`).
    - Automatically executes fallback cleanup (`container.remove({ force: true })`) if container startup fails after creation.
 
-4. **`deleteContainerByIdOrName(identifier: string, force?: boolean): Promise<{ id: string; name: string; removed: boolean }>`**
+5. **`deleteContainerByIdOrName(identifier: string, force?: boolean): Promise<{ id: string; name: string; removed: boolean }>`**
    - Retrieves container reference by ID or Name.
    - Removes container with `force: true` and volume removal (`v: true`).
    - Throws custom 404 error if container does not exist.
 
-5. **`deleteContainersByImage(image: string, tag?: string, force?: boolean): Promise<{ image: string; deletedCount: number; deletedContainers: Array<{ id: string; name: string }> }>`**
+6. **`deleteContainersByImage(image: string, tag?: string, force?: boolean): Promise<{ image: string; deletedCount: number; deletedContainers: Array<{ id: string; name: string }> }>`**
    - Fetches all containers (`docker.listContainers({ all: true })`).
    - Filters list by matching `Image` attribute against target `${image}:${tag}` or `${image}`.
    - Performs batch force deletion on all matching containers.
@@ -136,7 +144,8 @@ Located in [`controller/managementApp.controller.ts`](file:///d:/Personal/Docker
 
 | Method | Endpoint | Description | Request Location |
 | :--- | :--- | :--- | :--- |
-| `POST` | `/container` | Create and start a Docker container | Body |
+| `POST` | `/container` | Create and start a Docker container on internal network | Body |
+| `GET` | `/container/:identifier` | Inspect container details, status, IP, and environment variables | Path Parameter |
 | `DELETE` | `/container/:identifier` | Delete single container by ID or Name | Path Parameter / Query / Body |
 | `DELETE` | `/container/image/all` | Delete all containers for a specific image | Body / Query |
 | `GET` | `/` | Root server status check | N/A |
@@ -160,7 +169,6 @@ Located in [`controller/managementApp.controller.ts`](file:///d:/Personal/Docker
     "cmd": ["nginx", "-g", "daemon off;"],
     "ports": [
       {
-        "hostPort": "8080",
         "containerPort": "80"
       }
     ],
@@ -176,7 +184,9 @@ Located in [`controller/managementApp.controller.ts`](file:///d:/Personal/Docker
       "name": "my-web-server",
       "image": "nginx:alpine",
       "status": "running",
-      "created": "2026-07-30T12:00:00.000Z"
+      "created": "2026-07-30T12:00:00.000Z",
+      "internalIp": "172.18.0.2",
+      "url": "http://my-web-server.localhost:4000"
     }
   }
   ```
