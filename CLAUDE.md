@@ -11,10 +11,12 @@ Dockpoly Engine is a RESTful API service & Server-Side Rendered Dashboard (TypeS
 - **Install dependencies**: `bun install` or `npm install`
 - **Run dev server (hot reload)**: `bun run dev` (runs `tsx watch index.ts`)
 - **Run production**: `bun run index.ts`
+- **Run Unit & Integration Tests**: `bun test`
 - **Typecheck**: `bun x tsc --noEmit`
 - **Run via Docker Compose**: `docker compose up -d --build`
 - Server ports:
   - **Reverse Proxy Public Entrypoint**: `http://localhost:4000`
+  - **Interactive Swagger UI Documentation**: `http://localhost:4000/api-docs`
   - **Management API Internal Server**: `http://localhost:3000`
 
 ## Architecture

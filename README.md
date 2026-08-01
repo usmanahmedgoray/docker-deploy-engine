@@ -100,9 +100,16 @@ bun install
 # Run in development mode (hot reload)
 bun run dev
 
-# Or run via Docker Compose
-docker compose up -d --build
+### 3. Run Unit & Integration Tests
+
+```bash
+bun test
 ```
+
+### 4. Interactive Swagger UI Documentation
+
+Production-grade interactive OpenAPI 3.0 documentation is available at:
+👉 **`http://localhost:4000/api-docs`**
 
 Access Dashboard UI at: **`http://localhost:4000/`**
 

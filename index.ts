@@ -3,6 +3,8 @@ import express, { type Request, type Response, type NextFunction } from "express
 import { managementAppRoutes } from "./routes/managementApp.route";
 import { proxy } from "./proxy";
 import { config } from "./config/app.config";
+import { setupSwagger } from "./config/swagger.config";
+import { errorHandler } from "./middleware/errorHandler.middleware";
 
 // 1. Management API Server (internal port)
 const managementApp = express();
@@ -12,6 +14,10 @@ managementApp.set("views", path.join(process.cwd(), "views"));
 
 managementApp.use(express.json());
 managementApp.use(express.static(path.join(process.cwd(), "public"), { index: false }));
+
+// Mount Interactive Swagger UI documentation
+setupSwagger(managementApp);
+
 managementApp.use("/", managementAppRoutes);
 
 managementApp.get("/", (req: Request, res: Response) => {
@@ -19,13 +25,10 @@ managementApp.get("/", (req: Request, res: Response) => {
 });
 
 managementApp.use((req: Request, res: Response) => {
-    res.status(404).json({ message: "Not Found" });
+    res.status(404).json({ message: "Route Not Found" });
 });
 
-managementApp.use((err: Error, req: Request, res: Response, next: NextFunction) => {
-    console.error(err.stack);
-    res.status(500).json({ message: "Internal Server Error" });
-});
+managementApp.use(errorHandler);
 
 managementApp.listen(config.managementPort, "0.0.0.0", () => {
     console.log(`Management API server is running internally on 0.0.0.0:${config.managementPort}`);

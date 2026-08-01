@@ -117,6 +117,40 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
+    // Shared Copy Icon SVG
+    const SVG_COPY_ICON = `<svg class="copy-icon" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>`;
+
+    // Shared Reusable Copy-to-Clipboard Utility Function
+    window.copyToClipboard = function(text, element = null) {
+        if (!text) return;
+        
+        navigator.clipboard.writeText(text).then(() => {
+            showToast(`Copied "${text}" to clipboard`, 'success');
+            if (element) {
+                const originalHTML = element.innerHTML;
+                element.classList.add('copied');
+                element.innerHTML = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg> Copied!`;
+                setTimeout(() => {
+                    element.classList.remove('copied');
+                    element.innerHTML = originalHTML;
+                }, 1500);
+            }
+        }).catch(err => {
+            console.error('Clipboard copy failed:', err);
+        });
+    };
+
+    // Global Single-Click Copy Event Delegation
+    document.addEventListener('click', (e) => {
+        const copyTarget = e.target.closest('[data-copy]');
+        if (copyTarget) {
+            e.preventDefault();
+            e.stopPropagation();
+            const textToCopy = copyTarget.dataset.copy;
+            window.copyToClipboard(textToCopy, copyTarget);
+        }
+    });
+
     // 1. Tab Switcher
     navTabs.forEach(tab => {
         tab.addEventListener('click', () => {
@@ -241,20 +275,16 @@ document.addEventListener('DOMContentLoaded', () => {
             const p = PRESETS[key];
 
             if (p) {
-                // Active Card Highlight
                 document.querySelectorAll('.preset-card').forEach(c => c.classList.remove('active'));
                 card.classList.add('active');
 
-                // Populate Fields
                 document.getElementById('inputImage').value = p.image;
                 document.getElementById('inputTag').value = p.tag;
                 document.getElementById('inputName').value = p.name;
                 document.getElementById('inputPort').value = p.port;
 
-                // Hide hub search dropdown
                 if (hubSearchDropdown) hubSearchDropdown.classList.add('hidden');
 
-                // Populate Env Vars
                 envList.innerHTML = '';
                 p.env.forEach(pair => addEnvRow(pair.key, pair.value));
 
@@ -337,7 +367,7 @@ document.addEventListener('DOMContentLoaded', () => {
         envList.appendChild(row);
     }
 
-    // Deploy Form Submit with Dynamic Loading Spinner & Disabling
+    // Deploy Form Submit
     deployForm.addEventListener('submit', async (e) => {
         e.preventDefault();
 
@@ -439,21 +469,27 @@ document.addEventListener('DOMContentLoaded', () => {
                 <div class="card">
                     <div class="card-header">
                         <div class="container-title-group">
-                            <h3>${c.name}</h3>
-                            <span class="image-tag">${c.image}</span>
+                            <h3 class="copy-badge" data-copy="${c.name}" title="Click to copy container name">${c.name} ${SVG_COPY_ICON}</h3>
+                            <div><span class="copy-badge" data-copy="${c.image}" title="Click to copy image">${c.image} ${SVG_COPY_ICON}</span></div>
                         </div>
                         <span class="badge ${badgeClass}">${badgeText}</span>
                     </div>
 
                     <div class="card-details">
-                        <div class="detail-row"><span>Internal IP:</span> <span>${c.internalIp || '172.18.0.x'}</span></div>
+                        <div class="detail-row">
+                            <span>Internal IP:</span>
+                            <span class="copy-badge" data-copy="${c.internalIp || '172.18.0.x'}" title="Click to copy IP">${c.internalIp || '172.18.0.x'} ${SVG_COPY_ICON}</span>
+                        </div>
                         <div class="detail-row"><span>Status:</span> <span>${c.status}</span></div>
                     </div>
 
-                    <a href="${c.url}" target="_blank" class="url-link-box">
-                        <span>${c.url}</span>
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
-                    </a>
+                    <div style="display:flex; align-items:center; gap:6px; margin-bottom:18px;">
+                        <a href="${c.url}" target="_blank" class="url-link-box" style="flex:1; margin-bottom:0;">
+                            <span>${c.url}</span>
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+                        </a>
+                        <button type="button" class="btn btn-secondary btn-sm copy-badge" data-copy="${c.url}" title="Copy URL" style="padding:9px 10px;">${SVG_COPY_ICON}</button>
+                    </div>
 
                     <div class="card-action-strip">
                         <div class="action-btn-group">
@@ -473,7 +509,6 @@ document.addEventListener('DOMContentLoaded', () => {
             `;
         }).join('');
 
-        // Attach Power Action Handlers with Dynamic Spinners & Button Disabling
         document.querySelectorAll('.power-btn').forEach(btn => {
             btn.addEventListener('click', () => handlePowerAction(btn, btn.dataset.id, btn.dataset.action));
         });
@@ -491,7 +526,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // Power Action Handler with Interactive Messages & Loading Spinner
+    // Power Action Handler
     async function handlePowerAction(btn, identifier, action) {
         const originalContent = btn.innerHTML;
         btn.disabled = true;
@@ -544,11 +579,11 @@ document.addEventListener('DOMContentLoaded', () => {
             inspectTitle.textContent = `Container: ${c.name}`;
 
             inspectSummaryGrid.innerHTML = `
-                <div class="detail-row"><span>ID:</span> <span>${c.id.substring(0, 12)}</span></div>
-                <div class="detail-row"><span>Image:</span> <span>${c.image}</span></div>
+                <div class="detail-row"><span>ID:</span> <span class="copy-badge" data-copy="${c.id}">${c.id.substring(0, 12)} ${SVG_COPY_ICON}</span></div>
+                <div class="detail-row"><span>Image:</span> <span class="copy-badge" data-copy="${c.image}">${c.image} ${SVG_COPY_ICON}</span></div>
                 <div class="detail-row"><span>State:</span> <span>${c.status}</span></div>
-                <div class="detail-row"><span>Internal IP:</span> <span>${c.internalIp}</span></div>
-                <div class="detail-row"><span>Proxy URL:</span> <span>${c.url}</span></div>
+                <div class="detail-row"><span>Internal IP:</span> <span class="copy-badge" data-copy="${c.internalIp}">${c.internalIp} ${SVG_COPY_ICON}</span></div>
+                <div class="detail-row"><span>Proxy URL:</span> <span class="copy-badge" data-copy="${c.url}">${c.url} ${SVG_COPY_ICON}</span></div>
                 <div class="detail-row"><span>Exposed Ports:</span> <span>${c.exposedPorts?.join(', ') || 'None'}</span></div>
             `;
 
@@ -583,8 +618,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 const tag = img.repoTags[0] || img.id;
                 return `
                     <tr>
-                        <td><strong>${img.repoTags.join(', ')}</strong></td>
-                        <td><code>${img.id}</code></td>
+                        <td><span class="copy-badge" data-copy="${tag}"><strong>${img.repoTags.join(', ')}</strong> ${SVG_COPY_ICON}</span></td>
+                        <td><span class="copy-badge" data-copy="${img.id}"><code>${img.id}</code> ${SVG_COPY_ICON}</span></td>
                         <td>${img.sizeMb}</td>
                         <td>${new Date(img.created * 1000).toLocaleDateString()}</td>
                         <td style="text-align: right; display:flex; justify-content:flex-end; gap:6px;">
@@ -626,15 +661,15 @@ document.addEventListener('DOMContentLoaded', () => {
             inspectImageTitle.textContent = `Image Specification: ${img.repoTags[0] || img.id}`;
 
             inspectImageSummaryGrid.innerHTML = `
-                <div class="detail-row"><span>Short ID:</span> <span>${img.id}</span></div>
-                <div class="detail-row"><span>Full SHA256:</span> <span style="font-family:monospace;font-size:11px;">${img.fullId}</span></div>
-                <div class="detail-row"><span>Repository Tags:</span> <span>${img.repoTags.join(', ') || 'None'}</span></div>
+                <div class="detail-row"><span>Short ID:</span> <span class="copy-badge" data-copy="${img.id}">${img.id} ${SVG_COPY_ICON}</span></div>
+                <div class="detail-row"><span>Full SHA256:</span> <span class="copy-badge" data-copy="${img.fullId}">${img.fullId.substring(0,24)}... ${SVG_COPY_ICON}</span></div>
+                <div class="detail-row"><span>Repository Tags:</span> <span class="copy-badge" data-copy="${img.repoTags.join(', ')}">${img.repoTags.join(', ') || 'None'} ${SVG_COPY_ICON}</span></div>
                 <div class="detail-row"><span>Virtual Size:</span> <span>${img.sizeMb}</span></div>
                 <div class="detail-row"><span>OS / Architecture:</span> <span>${img.os} / ${img.architecture}</span></div>
                 <div class="detail-row"><span>Created:</span> <span>${new Date(img.created).toLocaleString()}</span></div>
                 <div class="detail-row"><span>Layer Count:</span> <span>${img.layersCount} layers</span></div>
                 <div class="detail-row"><span>Author / Maintainer:</span> <span>${img.author || 'N/A'}</span></div>
-                <div class="detail-row"><span>Entrypoint / Cmd:</span> <span>${[...img.entrypoint, ...img.cmd].join(' ') || 'Default'}</span></div>
+                <div class="detail-row"><span>Entrypoint / Cmd:</span> <span class="copy-badge" data-copy="${[...img.entrypoint, ...img.cmd].join(' ')}">${[...img.entrypoint, ...img.cmd].join(' ') || 'Default'} ${SVG_COPY_ICON}</span></div>
             `;
 
             inspectImageEnvBlock.textContent = `EXPOSED PORTS:\n${img.exposedPorts.join('\n') || 'None'}\n\nVOLUMES:\n${img.volumes.join('\n') || 'None'}\n\nENVIRONMENT:\n${img.env.join('\n') || 'None'}`;
@@ -664,10 +699,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
             networksTableBody.innerHTML = networks.map(n => `
                 <tr>
-                    <td><strong>${n.name}</strong> ${n.name === 'deploy-engine' ? `<span class="badge running">ENGINE</span>` : ''}</td>
-                    <td><code>${n.id}</code></td>
+                    <td><span class="copy-badge" data-copy="${n.name}"><strong>${n.name}</strong> ${SVG_COPY_ICON}</span> ${n.name === 'deploy-engine' ? `<span class="badge running">ENGINE</span>` : ''}</td>
+                    <td><span class="copy-badge" data-copy="${n.id}"><code>${n.id}</code> ${SVG_COPY_ICON}</span></td>
                     <td><span class="image-tag">${n.driver}</span></td>
-                    <td>${n.subnet} / ${n.gateway}</td>
+                    <td><span class="copy-badge" data-copy="${n.subnet}">${n.subnet} ${SVG_COPY_ICON}</span> / <span class="copy-badge" data-copy="${n.gateway}">${n.gateway} ${SVG_COPY_ICON}</span></td>
                     <td>${n.scope}</td>
                     <td><strong>${n.containersCount} container(s)</strong></td>
                     <td style="text-align: right;">
@@ -711,9 +746,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
             volumesTableBody.innerHTML = volumes.map(v => `
                 <tr>
-                    <td><strong>${v.name}</strong></td>
+                    <td><span class="copy-badge" data-copy="${v.name}"><strong>${v.name}</strong> ${SVG_COPY_ICON}</span></td>
                     <td><span class="image-tag">${v.driver}</span></td>
-                    <td><code style="font-size:11px;">${v.mountpoint}</code></td>
+                    <td><span class="copy-badge" data-copy="${v.mountpoint}"><code style="font-size:11px;">${v.mountpoint}</code> ${SVG_COPY_ICON}</span></td>
                     <td>${v.scope}</td>
                     <td style="text-align: right;">
                         <button class="btn btn-danger btn-sm open-delete-volume-btn" data-target="${v.name}">
@@ -782,10 +817,10 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!metricsTableBody) return;
         metricsTableBody.innerHTML = containers.map(c => `
             <tr>
-                <td><strong>${c.name}</strong></td>
-                <td><code>${c.internalIp || 'N/A'}</code></td>
+                <td><span class="copy-badge" data-copy="${c.name}"><strong>${c.name}</strong> ${SVG_COPY_ICON}</span></td>
+                <td><span class="copy-badge" data-copy="${c.internalIp || 'N/A'}"><code>${c.internalIp || 'N/A'}</code> ${SVG_COPY_ICON}</span></td>
                 <td><span class="badge ${c.state === 'running' ? 'running' : c.state === 'paused' ? 'paused' : 'stopped'}">${c.state}</span></td>
-                <td><a href="${c.url}" target="_blank" style="color:var(--primary);">${c.url}</a></td>
+                <td><span class="copy-badge" data-copy="${c.url}"><a href="${c.url}" target="_blank" style="color:var(--primary);">${c.url}</a> ${SVG_COPY_ICON}</span></td>
             </tr>
         `).join('');
     }
