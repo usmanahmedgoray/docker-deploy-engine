@@ -127,7 +127,7 @@ export const listContainers = async () => {
 
         const networkData = c.NetworkSettings?.Networks?.[DOCKER_NETWORK_NAME];
         const internalIp = networkData?.IPAddress || "172.18.0.x";
-        const proxyUrl = `http://${cleanName}.${config.domain}:${config.port}`;
+        const proxyUrl = `http://${cleanName}.${config.publicDomain}:${config.port}`;
 
         return {
             id: c.Id,
@@ -165,7 +165,7 @@ export const getContainerByIdOrName = async (identifier: string) => {
     const cleanName = rawName.startsWith("/") ? rawName.substring(1) : rawName;
     const networkData = inspectData.NetworkSettings?.Networks?.[DOCKER_NETWORK_NAME];
     const internalIp = networkData?.IPAddress || "172.18.0.x";
-    const proxyUrl = `http://${cleanName}.${config.domain}:${config.port}`;
+    const proxyUrl = `http://${cleanName}.${config.publicDomain}:${config.port}`;
 
     return {
         id: inspectData.Id,

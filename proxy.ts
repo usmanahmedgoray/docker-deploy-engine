@@ -14,7 +14,13 @@ export const proxy = createProxyMiddleware({
         const containerName = hostNameOnly.split(".")[0] || "";
 
         // If accessing root host, localhost, main domain or IP -> Route to Management API server
-        if (!containerName || containerName === "localhost" || containerName === "127" || containerName === config.domain) {
+        if (
+            !containerName ||
+            containerName === "localhost" ||
+            containerName === "127" ||
+            hostNameOnly === config.domain ||
+            hostNameOnly === config.publicDomain
+        ) {
             return MANAGEMENT_APP_TARGET;
         }
 

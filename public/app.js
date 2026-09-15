@@ -158,8 +158,25 @@ document.addEventListener('DOMContentLoaded', () => {
     // Shared Reusable Copy-to-Clipboard Utility Function
     window.copyToClipboard = function(text, element = null) {
         if (!text) return;
-        
-        navigator.clipboard.writeText(text).then(() => {
+
+        const copyWithFallback = () => {
+            const textarea = document.createElement('textarea');
+            textarea.value = text;
+            textarea.setAttribute('readonly', '');
+            textarea.style.position = 'fixed';
+            textarea.style.opacity = '0';
+            document.body.appendChild(textarea);
+            textarea.select();
+            const copied = document.execCommand('copy');
+            textarea.remove();
+            if (!copied) throw new Error('Clipboard copy was rejected');
+        };
+
+        const copyPromise = navigator.clipboard?.writeText
+            ? navigator.clipboard.writeText(text).catch(() => copyWithFallback())
+            : Promise.resolve().then(copyWithFallback);
+
+        copyPromise.then(() => {
             showToast(`Copied to clipboard`, 'success');
             if (element) {
                 const originalHTML = element.innerHTML;
@@ -172,6 +189,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         }).catch(err => {
             console.error('Clipboard copy failed:', err);
+            showToast('Copy failed. Please copy the link manually.', 'error');
         });
     };
 
