@@ -100,6 +100,14 @@
                     </div>
                 </div>
 
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="inputHostPort">Publish to Host Port (optional)</label>
+                        <input type="text" id="inputHostPort" placeholder="e.g. 5432 — leave blank if only reachable via the proxy">
+                        <small class="form-hint">Required for non-HTTP services (databases, caches, queues) accessed by a direct client (pgAdmin, DBeaver, RedisInsight, etc.) — the subdomain proxy only routes HTTP traffic. Not needed for web apps reachable via the subdomain URL.</small>
+                    </div>
+                </div>
+
                 <div class="form-group">
                     <div class="env-header">
                         <label>Environment Variables</label>

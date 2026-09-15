@@ -965,6 +965,7 @@ body {
 .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; }
 .form-group { display: flex; flex-direction: column; gap: 8px; margin-bottom: 16px; }
 .form-group label { font-size: 13px; font-weight: 600; color: var(--text-muted); }
+.form-hint { font-size: 11.5px; color: var(--text-muted); line-height: 1.4; margin-top: -2px; }
 input[type="text"] { width: 100%; padding: 11px 15px; background: var(--bg-input); border: 1px solid var(--border-color); border-radius: var(--radius-sm); color: #fff; font-family: inherit; font-size: 13.5px; box-sizing: border-box; }
 input[type="text"]:focus { outline: none; border-color: var(--primary); }
 .env-header { display: flex; justify-content: space-between; align-items: center; }

@@ -621,6 +621,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const tag = document.getElementById('inputTag').value.trim() || 'latest';
         const containerName = document.getElementById('inputName').value.trim() || undefined;
         const portVal = document.getElementById('inputPort').value.trim();
+        const hostPortVal = document.getElementById('inputHostPort').value.trim();
         const autoRemove = document.getElementById('inputAutoRemove').checked;
 
         const env = [];
@@ -630,7 +631,9 @@ document.addEventListener('DOMContentLoaded', () => {
             if (k) env.push(`${k}=${v}`);
         });
 
-        const ports = portVal ? [{ containerPort: portVal }] : undefined;
+        const ports = portVal
+            ? [{ containerPort: portVal, hostPort: hostPortVal || undefined }]
+            : undefined;
 
         const submitBtn = document.getElementById('submitDeployBtn');
         const btnText = document.getElementById('deployBtnText');
