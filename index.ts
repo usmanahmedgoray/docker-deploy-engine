@@ -1,5 +1,6 @@
 import fs from "fs";
 import https from "https";
+import tls from "tls";
 import path from "path";
 import express, { type Request, type Response, type NextFunction } from "express";
 import { managementAppRoutes } from "./routes/managementApp.route";
@@ -53,13 +54,27 @@ proxyApp.use("/", proxy);
 
 if (config.sslEnabled && fs.existsSync(config.sslCertPath) && fs.existsSync(config.sslKeyPath)) {
     try {
-        const sslOptions = {
-            cert: fs.readFileSync(config.sslCertPath),
-            key: fs.readFileSync(config.sslKeyPath),
+        const getLatestSecureContext = () => {
+            return tls.createSecureContext({
+                cert: fs.readFileSync(config.sslCertPath),
+                key: fs.readFileSync(config.sslKeyPath),
+            });
         };
 
-        https.createServer(sslOptions, proxyApp).listen(443, "0.0.0.0", () => {
-            console.log(`HTTPS Reverse Proxy server is running publicly on 0.0.0.0:443`);
+        const serverOptions = {
+            SNICallback: (servername: string, cb: (err: Error | null, ctx?: tls.SecureContext) => void) => {
+                try {
+                    const ctx = getLatestSecureContext();
+                    cb(null, ctx);
+                } catch (err: any) {
+                    console.warn(`[SNI Warning] Failed to reload SSL cert for ${servername}:`, err.message);
+                    cb(null, getLatestSecureContext());
+                }
+            },
+        };
+
+        https.createServer(serverOptions, proxyApp).listen(443, "0.0.0.0", () => {
+            console.log(`HTTPS Reverse Proxy server is running publicly on 0.0.0.0:443 with Hot SSL Reloading`);
         });
 
         // HTTP Redirect Server (redirects http:// to https://, preserving ACME challenges)

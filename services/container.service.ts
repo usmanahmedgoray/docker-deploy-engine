@@ -1,8 +1,27 @@
+import { exec } from "child_process";
 import { docker } from "../config/docker.config";
 import { config } from "../config/app.config";
 import type { ContainerPowerAction, CreateContainerDto } from "../types/container.types";
 
 import net from "net";
+
+export const autoExpandSSLForSubdomain = (containerName: string) => {
+    if (!config.sslEnabled || !config.domain || config.domain === "localhost" || config.domain === "127.0.0.1") return;
+
+    const mainDomain = config.domain;
+    const fullSubdomain = `${containerName}.${mainDomain}`;
+
+    const cmd = `sudo certbot certonly --webroot -w ./public --expand -d ${mainDomain} -d ${fullSubdomain} -n --agree-tos`;
+
+    console.log(`[Auto-SSL] Requesting SSL Certificate expansion for ${fullSubdomain}...`);
+    exec(cmd, (error, stdout, stderr) => {
+        if (error) {
+            console.warn(`[Auto-SSL Warning] Could not auto-expand SSL for ${fullSubdomain}:`, error.message);
+            return;
+        }
+        console.log(`[Auto-SSL Success] SSL Certificate successfully expanded for ${fullSubdomain}!`);
+    });
+};
 
 const DOCKER_NETWORK_NAME = config.dockerNetwork || "deploy-engine";
 
@@ -216,6 +235,10 @@ export const createContainer = async (payload: CreateContainerDto) => {
     const inspectData = await container.inspect();
     const rawName = inspectData.Name || "";
     const cleanName = rawName.startsWith("/") ? rawName.substring(1) : rawName;
+
+    // Automatically expand Certbot SSL for new container subdomain in the background
+    autoExpandSSLForSubdomain(cleanName);
+
     const networkData = inspectData.NetworkSettings?.Networks?.[DOCKER_NETWORK_NAME];
     const internalIp = networkData?.IPAddress || "172.18.0.x";
     const proxyUrl = `http://${cleanName}.${config.publicDomain}:${config.port}`;
