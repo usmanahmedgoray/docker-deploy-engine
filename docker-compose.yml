@@ -7,9 +7,10 @@ services:
     env_file:
       - .env
     ports:
-      - "${PORT:-4000}:${PORT:-4000}"
+      - "${PORT:-80}:${PORT:-80}"
+      - "443:443"
     environment:
-      - PORT=${PORT:-4000}
+      - PORT=${PORT:-80}
       - MANAGEMENT_PORT=${MANAGEMENT_PORT:-3000}
       - MANAGEMENT_HOST=${MANAGEMENT_HOST:-127.0.0.1}
       - DOMAIN=${DOMAIN:-localhost}
