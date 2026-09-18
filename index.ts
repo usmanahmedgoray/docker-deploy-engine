@@ -70,13 +70,15 @@ if (config.sslEnabled) {
             };
 
             const serverOptions = {
+                cert: fs.readFileSync(config.sslCertPath),
+                key: fs.readFileSync(config.sslKeyPath),
                 SNICallback: (servername: string, cb: (err: Error | null, ctx?: tls.SecureContext) => void) => {
                     try {
                         const ctx = getLatestSecureContext();
                         cb(null, ctx);
                     } catch (err: any) {
                         console.warn(`[SNI Warning] Failed to reload SSL cert for ${servername}:`, err.message);
-                        cb(null, getLatestSecureContext());
+                        cb(null);
                     }
                 },
             };
