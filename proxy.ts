@@ -39,12 +39,12 @@ export const proxy = createProxyMiddleware({
             // Target container name (resolvable via Docker DNS) or internal IP fallback
             const targetHost = containerName || internalIp;
 
-            // Find exposed internal port (prefer standard HTTP ports 80/3000/8080 over 443)
+            // Find exposed internal port (prefer standard web ports 80/3000/8080/5000/8000 over 443/5432)
             const exposedPorts = Object.keys(inspectData.Config.ExposedPorts || {});
             const selectedPort = 
                 exposedPorts.find((p) => p.startsWith("80/") || p === "80/tcp") ||
-                exposedPorts.find((p) => p.startsWith("3000/") || p.startsWith("8080/")) ||
-                exposedPorts.find((p) => !p.startsWith("443/")) ||
+                exposedPorts.find((p) => p.startsWith("3000/") || p.startsWith("8080/") || p.startsWith("5000/") || p.startsWith("8000/")) ||
+                exposedPorts.find((p) => !p.startsWith("443/") && !p.startsWith("5432/") && !p.startsWith("6379/") && !p.startsWith("3306/")) ||
                 exposedPorts[0];
             const containerPort = selectedPort ? selectedPort.split("/")[0] : "80";
 
@@ -62,8 +62,15 @@ export const proxy = createProxyMiddleware({
         error: (err: any, req: any, res: any) => {
             if (res && typeof res.status === "function" && !res.headersSent) {
                 const isConnRefused = err.code === "ECONNREFUSED";
-                const helpMsg = isConnRefused
-                    ? "Container is still starting up or the internal service is initializing. Please wait 10-20 seconds and refresh."
+                const hostHeader = req.headers.host || "";
+                const containerName = hostHeader.split(".")[0] || "";
+                
+                const isDatabase = containerName.includes("postgres") || containerName.includes("redis") || containerName.includes("mysql") || containerName.includes("mongo");
+
+                const helpMsg = isDatabase
+                    ? `Container '${containerName}' is a Database Service (TCP Data Engine). Databases cannot be opened as HTTP web pages in a browser. Connect using a DB client (e.g. DBeaver/psql).`
+                    : isConnRefused
+                    ? `Container '${containerName}' web service is still initializing or starting up. Please wait 10-15 seconds and refresh the browser.`
                     : err.message;
 
                 res.status(503).json({
