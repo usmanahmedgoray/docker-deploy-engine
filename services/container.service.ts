@@ -17,12 +17,29 @@ export const isPortAvailable = (port: number): Promise<boolean> => {
     });
 };
 
+export const isHostPortOccupied = async (port: number): Promise<boolean> => {
+    const isFree = await isPortAvailable(port);
+    if (!isFree) return true;
+
+    try {
+        const containers = await docker.listContainers({ all: true });
+        for (const c of containers) {
+            if (!c.Ports) continue;
+            for (const p of c.Ports) {
+                if (p.PublicPort === port) return true;
+            }
+        }
+    } catch {}
+
+    return false;
+};
+
 export const findNextAvailablePort = async (
     startPort: number = config.portRangeStart,
     endPort: number = config.portRangeEnd
 ): Promise<number> => {
     for (let port = startPort; port <= endPort; port++) {
-        if (await isPortAvailable(port)) {
+        if (!(await isHostPortOccupied(port))) {
             return port;
         }
     }
@@ -124,11 +141,14 @@ export const createContainer = async (payload: CreateContainerDto) => {
                 if (isNaN(reqPort) || reqPort <= 0 || reqPort > 65535) {
                     throw new Error(`Invalid custom host port '${mapping.hostPort}'`);
                 }
-                const available = await isPortAvailable(reqPort);
-                if (!available) {
-                    throw new Error(`Host port ${reqPort} is already in use by another container or process.`);
+                const occupied = await isHostPortOccupied(reqPort);
+                if (occupied) {
+                    // If requested host port is already occupied (e.g. 5432 taken by my-postgres-1), auto-allocate next free port!
+                    const autoPort = await findNextAvailablePort();
+                    finalHostPort = autoPort.toString();
+                } else {
+                    finalHostPort = reqPort.toString();
                 }
-                finalHostPort = reqPort.toString();
             } else {
                 const autoPort = await findNextAvailablePort();
                 finalHostPort = autoPort.toString();
