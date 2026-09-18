@@ -10,4 +10,10 @@ export const config = {
     publicDomain: isIpv4Address(configuredDomain) ? `${configuredDomain}.nip.io` : configuredDomain,
     dockerNetwork: process.env.DOCKER_NETWORK || "deploy-engine",
     nodeEnv: process.env.NODE_ENV || "production",
+    portRangeStart: Number(process.env.PORT_RANGE_START) || 80,
+    portRangeEnd: Number(process.env.PORT_RANGE_END) || 10000,
+    sslEnabled: process.env.SSL_ENABLED === "true",
+    sslCertPath: process.env.SSL_CERT_PATH || `/etc/letsencrypt/live/${configuredDomain}/fullchain.pem`,
+    sslKeyPath: process.env.SSL_KEY_PATH || `/etc/letsencrypt/live/${configuredDomain}/privkey.pem`,
 };
+

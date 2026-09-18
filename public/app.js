@@ -229,6 +229,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (btn) {
             btn.addEventListener('click', () => {
                 if (mobileSidebarBackdrop) mobileSidebarBackdrop.classList.remove('active');
+                isHostPortUserModified = false;
                 deployModal.classList.add('active');
             });
         }
@@ -374,6 +375,25 @@ document.addEventListener('DOMContentLoaded', () => {
         pendingDeleteVolumeTarget = null;
     });
 
+    // Port Auto-Sync Logic (Publish Host Port defaults to Internal Port unless user manually edits host port)
+    let isHostPortUserModified = false;
+    const inputPort = document.getElementById('inputPort');
+    const inputHostPort = document.getElementById('inputHostPort');
+
+    if (inputHostPort) {
+        inputHostPort.addEventListener('input', () => {
+            isHostPortUserModified = true;
+        });
+    }
+
+    if (inputPort) {
+        inputPort.addEventListener('input', (e) => {
+            if (inputHostPort && !isHostPortUserModified) {
+                inputHostPort.value = e.target.value.trim();
+            }
+        });
+    }
+
     // 3. Interactive Quick Presets Handler (built-in presets)
     document.querySelectorAll('.preset-card').forEach(card => {
         card.addEventListener('click', (e) => {
@@ -385,10 +405,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 document.querySelectorAll('.preset-card').forEach(c => c.classList.remove('active'));
                 card.classList.add('active');
 
+                isHostPortUserModified = false;
                 document.getElementById('inputImage').value = p.image;
                 document.getElementById('inputTag').value = p.tag;
                 document.getElementById('inputName').value = p.name;
                 document.getElementById('inputPort').value = p.port;
+                if (inputHostPort) inputHostPort.value = p.port;
 
                 if (hubSearchDropdown) hubSearchDropdown.classList.add('hidden');
 
@@ -451,10 +473,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 document.querySelectorAll('.preset-card').forEach(c => c.classList.remove('active'));
                 card.classList.add('active');
 
+                isHostPortUserModified = false;
                 document.getElementById('inputImage').value = p.image;
                 document.getElementById('inputTag').value = p.tag || 'latest';
                 document.getElementById('inputName').value = p.containerName || '';
                 document.getElementById('inputPort').value = p.port || '';
+                if (inputHostPort) inputHostPort.value = p.port || '';
 
                 if (hubSearchDropdown) hubSearchDropdown.classList.add('hidden');
 
@@ -631,8 +655,8 @@ document.addEventListener('DOMContentLoaded', () => {
             if (k) env.push(`${k}=${v}`);
         });
 
-        const ports = portVal
-            ? [{ containerPort: portVal, hostPort: hostPortVal || undefined }]
+        const ports = (portVal || hostPortVal)
+            ? [{ containerPort: portVal || "", hostPort: hostPortVal || undefined }]
             : undefined;
 
         const submitBtn = document.getElementById('submitDeployBtn');
@@ -1194,6 +1218,41 @@ document.addEventListener('DOMContentLoaded', () => {
             if (target) target.classList.remove('hidden');
         });
     });
+
+    // Update Port Range Permanently
+    const updatePortRangeForm = document.getElementById('updatePortRangeForm');
+    if (updatePortRangeForm) {
+        updatePortRangeForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const start = Number(document.getElementById('cfgInputStart').value.trim());
+            const end = Number(document.getElementById('cfgInputEnd').value.trim());
+
+            const saveBtn = document.getElementById('savePortRangeBtn');
+            if (saveBtn) saveBtn.disabled = true;
+
+            try {
+                const res = await fetch('/config/port-range', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ start, end })
+                });
+
+                const data = await res.json();
+                if (!res.ok) throw new Error(data.message || 'Failed to update port range');
+
+                showToast(data.data.message || 'Port range saved permanently!', 'success');
+
+                const cfgPortStart = document.getElementById('cfgPortStart');
+                const cfgPortEnd = document.getElementById('cfgPortEnd');
+                if (cfgPortStart) cfgPortStart.textContent = data.data.portRangeStart;
+                if (cfgPortEnd) cfgPortEnd.textContent = data.data.portRangeEnd;
+            } catch (err) {
+                showToast(err.message, 'error');
+            } finally {
+                if (saveBtn) saveBtn.disabled = false;
+            }
+        });
+    }
 
     // Toast Notification Utility
     function showToast(msg, type = 'info') {

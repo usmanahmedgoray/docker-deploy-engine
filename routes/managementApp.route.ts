@@ -3,6 +3,7 @@ import { containerRoutes } from "./container.route";
 import { imageRoutes } from "./image.route";
 import { networkRoutes } from "./network.route";
 import { volumeRoutes } from "./volume.route";
+import { configRoutes } from "./config.route";
 
 export const managementAppRoutes = Router();
 
@@ -11,3 +12,5 @@ managementAppRoutes.use("/container", containerRoutes);
 managementAppRoutes.use("/image", imageRoutes);
 managementAppRoutes.use("/network", networkRoutes);
 managementAppRoutes.use("/volume", volumeRoutes);
+managementAppRoutes.use("/config", configRoutes);
+

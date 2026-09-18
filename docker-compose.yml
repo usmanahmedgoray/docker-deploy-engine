@@ -1,13 +1,32 @@
 services:
+  traefik:
+    container_name: traefik-proxy
+    image: traefik:v3.1
+    restart: unless-stopped
+    command:
+      - "--api.insecure=true"
+      - "--providers.docker=true"
+      - "--providers.docker.exposedbydefault=false"
+      - "--providers.docker.network=${DOCKER_NETWORK:-deploy-engine}"
+      - "--entrypoints.web.address=:4000"
+      - "--entrypoints.tcp.address=:5432"
+    ports:
+      - "${PORT:-4000}:4000"
+      - "5432:5432"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    networks:
+      - deploy-engine
+
   app:
     container_name: dockpoly-engine
     build:
       context: .
       dockerfile: Dockerfile
+    depends_on:
+      - traefik
     env_file:
       - .env
-    ports:
-      - "${PORT:-4000}:${PORT:-4000}"
     environment:
       - PORT=${PORT:-4000}
       - MANAGEMENT_PORT=${MANAGEMENT_PORT:-3000}
@@ -15,8 +34,13 @@ services:
       - DOMAIN=${DOMAIN:-localhost}
       - DOCKER_NETWORK=${DOCKER_NETWORK:-deploy-engine}
       - NODE_ENV=${NODE_ENV:-production}
+    ports:
+      - "${PORT:-80}:${PORT:-80}"
+      - "443:443"
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
+      - /etc/letsencrypt:/etc/letsencrypt:ro
+      - ./public:/app/public
     networks:
       - deploy-engine
     restart: unless-stopped

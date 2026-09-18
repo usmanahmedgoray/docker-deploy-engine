@@ -2,7 +2,32 @@ import { docker } from "../config/docker.config";
 import { config } from "../config/app.config";
 import type { ContainerPowerAction, CreateContainerDto } from "../types/container.types";
 
+import net from "net";
+
 const DOCKER_NETWORK_NAME = config.dockerNetwork || "deploy-engine";
+
+export const isPortAvailable = (port: number): Promise<boolean> => {
+    return new Promise((resolve) => {
+        const server = net.createServer();
+        server.once("error", () => resolve(false));
+        server.once("listening", () => {
+            server.close(() => resolve(true));
+        });
+        server.listen(port, "0.0.0.0");
+    });
+};
+
+export const findNextAvailablePort = async (
+    startPort: number = config.portRangeStart,
+    endPort: number = config.portRangeEnd
+): Promise<number> => {
+    for (let port = startPort; port <= endPort; port++) {
+        if (await isPortAvailable(port)) {
+            return port;
+        }
+    }
+    throw new Error(`No available ports found in range ${startPort}-${endPort}`);
+};
 
 export const ensureCustomNetworkExists = async () => {
     try {
@@ -60,14 +85,77 @@ export const createContainer = async (payload: CreateContainerDto) => {
     const exposedPortsObj: Record<string, {}> = {};
     const portBindingsObj: Record<string, Array<{ HostPort: string }>> = {};
 
-    if (ports && Array.isArray(ports)) {
-        for (const mapping of ports) {
-            const containerPortKey = `${mapping.containerPort}/tcp`;
-            exposedPortsObj[containerPortKey] = {};
-            if (mapping.hostPort) {
-                portBindingsObj[containerPortKey] = [{ HostPort: mapping.hostPort.toString() }];
-            }
+    let mappingsToProcess = ports && Array.isArray(ports) ? [...ports] : [];
+
+    // Auto-detect default DB ports if no port mapping was provided but image is a known DB
+    if (mappingsToProcess.length === 0) {
+        const lowerImg = image.toLowerCase();
+        if (lowerImg.includes("postgres")) {
+            mappingsToProcess.push({ containerPort: "5432" });
+        } else if (lowerImg.includes("redis")) {
+            mappingsToProcess.push({ containerPort: "6379" });
+        } else if (lowerImg.includes("mysql") || lowerImg.includes("mariadb")) {
+            mappingsToProcess.push({ containerPort: "3306" });
+        } else if (lowerImg.includes("mongo")) {
+            mappingsToProcess.push({ containerPort: "27017" });
         }
+    }
+
+    if (mappingsToProcess.length > 0) {
+        for (const mapping of mappingsToProcess) {
+            let rawContainerPort = (mapping.containerPort || "").trim();
+            if (!rawContainerPort) {
+                const lowerImg = image.toLowerCase();
+                if (lowerImg.includes("postgres")) rawContainerPort = "5432";
+                else if (lowerImg.includes("redis")) rawContainerPort = "6379";
+                else if (lowerImg.includes("mysql") || lowerImg.includes("mariadb")) rawContainerPort = "3306";
+                else if (lowerImg.includes("mongo")) rawContainerPort = "27017";
+                else rawContainerPort = "80";
+            }
+
+            const containerPortKey = rawContainerPort.includes("/")
+                ? rawContainerPort
+                : `${rawContainerPort}/tcp`;
+            exposedPortsObj[containerPortKey] = {};
+
+            let finalHostPort: string;
+            if (mapping.hostPort && mapping.hostPort.trim() !== "") {
+                const reqPort = Number(mapping.hostPort);
+                if (isNaN(reqPort) || reqPort <= 0 || reqPort > 65535) {
+                    throw new Error(`Invalid custom host port '${mapping.hostPort}'`);
+                }
+                const available = await isPortAvailable(reqPort);
+                if (!available) {
+                    throw new Error(`Host port ${reqPort} is already in use by another container or process.`);
+                }
+                finalHostPort = reqPort.toString();
+            } else {
+                const autoPort = await findNextAvailablePort();
+                finalHostPort = autoPort.toString();
+            }
+
+            portBindingsObj[containerPortKey] = [{ HostPort: finalHostPort }];
+        }
+    }
+
+    const effectiveName = containerName || `container-${Math.random().toString(36).substring(2, 8)}`;
+    const sniDomain = `${effectiveName}.${config.publicDomain}`;
+
+    const traefikLabels: Record<string, string> = {
+        "traefik.enable": "true",
+        [`traefik.http.routers.${effectiveName}.rule`]: `Host(\`${sniDomain}\`)`,
+        [`traefik.http.routers.${effectiveName}.entrypoints`]: "web",
+    };
+
+    const exposedKeys = Object.keys(exposedPortsObj);
+    if (exposedKeys.length > 0 && exposedKeys[0]) {
+        const primaryPortKey = exposedKeys[0];
+        const primaryPortNum = primaryPortKey.split("/")[0] || "5432";
+
+        traefikLabels[`traefik.tcp.routers.${effectiveName}-tcp.rule`] = `HostSNI(\`${sniDomain}\`)`;
+        traefikLabels[`traefik.tcp.routers.${effectiveName}-tcp.entrypoints`] = "tcp";
+        traefikLabels[`traefik.tcp.routers.${effectiveName}-tcp.tls`] = "true";
+        traefikLabels[`traefik.tcp.services.${effectiveName}-tcp.loadbalancer.server.port`] = primaryPortNum;
     }
 
     const options: any = {
@@ -75,6 +163,7 @@ export const createContainer = async (payload: CreateContainerDto) => {
         name: containerName || undefined,
         Env: env || [],
         Cmd: cmd || undefined,
+        Labels: traefikLabels,
         ExposedPorts: Object.keys(exposedPortsObj).length > 0 ? exposedPortsObj : undefined,
         HostConfig: {
             NetworkMode: DOCKER_NETWORK_NAME,
@@ -107,12 +196,19 @@ export const createContainer = async (payload: CreateContainerDto) => {
     const inspectData = await container.inspect();
     const rawName = inspectData.Name || "";
     const cleanName = rawName.startsWith("/") ? rawName.substring(1) : rawName;
+    const networkData = inspectData.NetworkSettings?.Networks?.[DOCKER_NETWORK_NAME];
+    const internalIp = networkData?.IPAddress || "172.18.0.x";
+    const proxyUrl = `http://${cleanName}.${config.publicDomain}:${config.port}`;
+    const portsInfo = inspectData.NetworkSettings?.Ports || {};
 
     return {
         id: inspectData.Id,
         name: cleanName,
         image: inspectData.Config?.Image || fullImageName,
         status: inspectData.State?.Status || "running",
+        internalIp,
+        url: proxyUrl,
+        ports: portsInfo,
         created: inspectData.Created,
     };
 };

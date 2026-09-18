@@ -103,8 +103,8 @@
                 <div class="form-row">
                     <div class="form-group">
                         <label for="inputHostPort">Publish to Host Port (optional)</label>
-                        <input type="text" id="inputHostPort" placeholder="e.g. 5432 — leave blank if only reachable via the proxy">
-                        <small class="form-hint">Required for non-HTTP services (databases, caches, queues) accessed by a direct client (pgAdmin, DBeaver, RedisInsight, etc.) — the subdomain proxy only routes HTTP traffic. Not needed for web apps reachable via the subdomain URL.</small>
+                        <input type="text" id="inputHostPort" placeholder="e.g. 5432, 8080 — leave blank for auto-allocation (80-10000)">
+                        <small class="form-hint">Manually define your custom external host port or leave blank to auto-allocate from range (80 - 10000). Required for direct client access (pgAdmin, DBeaver, RedisInsight, etc.).</small>
                     </div>
                 </div>
 

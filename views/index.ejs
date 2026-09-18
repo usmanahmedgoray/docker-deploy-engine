@@ -297,9 +297,31 @@
                             <div class="config-item"><span>MANAGEMENT_PORT (Internal API):</span> <strong><%= config.managementPort %></strong></div>
                             <div class="config-item"><span>MANAGEMENT_HOST:</span> <strong><%= config.managementHost %></strong></div>
                             <div class="config-item"><span>DOMAIN (Base Domain):</span> <strong><%= config.domain %></strong></div>
+                            <div class="config-item"><span>PORT_RANGE_START:</span> <strong id="cfgPortStart"><%= config.portRangeStart %></strong></div>
+                            <div class="config-item"><span>PORT_RANGE_END:</span> <strong id="cfgPortEnd"><%= config.portRangeEnd %></strong></div>
                             <div class="config-item"><span>DOCKER_NETWORK:</span> <strong><%= config.dockerNetwork %></strong></div>
                             <div class="config-item"><span>NODE_ENV:</span> <strong>production</strong></div>
                         </div>
+                    </div>
+
+                    <div class="config-card">
+                        <h3>Update Port Range (Permanent)</h3>
+                        <p class="subtitle" style="margin-bottom: 16px;">Set the host port range used for dynamic container allocation. Saved permanently to .env file.</p>
+                        <form id="updatePortRangeForm">
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="cfgInputStart">Port Range Start *</label>
+                                    <input type="number" id="cfgInputStart" value="<%= config.portRangeStart %>" required min="1" max="65535">
+                                </div>
+                                <div class="form-group">
+                                    <label for="cfgInputEnd">Port Range End *</label>
+                                    <input type="number" id="cfgInputEnd" value="<%= config.portRangeEnd %>" required min="1" max="65535">
+                                </div>
+                            </div>
+                            <button type="submit" class="btn btn-primary" id="savePortRangeBtn">
+                                <span>Save Port Range Permanently</span>
+                            </button>
+                        </form>
                     </div>
                 </div>
             </section>
