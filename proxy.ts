@@ -59,11 +59,17 @@ export const proxy = createProxyMiddleware({
     },
     changeOrigin: true,
     on: {
-        error: (err: Error, req: any, res: any) => {
+        error: (err: any, req: any, res: any) => {
             if (res && typeof res.status === "function" && !res.headersSent) {
+                const isConnRefused = err.code === "ECONNREFUSED";
+                const helpMsg = isConnRefused
+                    ? "Container is still starting up or the internal service is initializing. Please wait 10-20 seconds and refresh."
+                    : err.message;
+
                 res.status(503).json({
                     message: "Service Unavailable: Proxy routing error",
                     error: err.message,
+                    details: helpMsg,
                 });
             }
         },
